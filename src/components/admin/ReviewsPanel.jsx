@@ -9,27 +9,47 @@ export default function ReviewsPanel() {
   const [editingReview, setEditingReview] = useState(null);
   const [editText, setEditText] = useState('');
 
+  const fetchPending = async () => {
+    try {
+      const data = await getPendingReviews();
+      setPendingReviews(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error('[ReviewsPanel] Error fetching pending reviews:', e);
+      setPendingReviews([]);
+    }
+  };
+
   useEffect(() => {
-    setPendingReviews(getPendingReviews());
+    fetchPending();
   }, []);
 
-  const handlePublish = (review) => {
-    const dataToPublish = editingReview?.id === review.id
-      ? { ...review, text: editText }
-      : review;
-    publishReview(review.id, dataToPublish);
-    setPendingReviews(getPendingReviews());
-    setEditingReview(null);
+  const handlePublish = async (review) => {
+    try {
+      const dataToPublish = editingReview?.id === review.id
+        ? { ...review, text: editText }
+        : review;
+      await publishReview(review.id, dataToPublish);
+      await fetchPending();
+      setEditingReview(null);
+    } catch (e) {
+      console.error('[ReviewsPanel] Error publishing review:', e);
+      alert('Error al publicar la reseña.');
+    }
   };
 
-  const handleReject = (id) => {
+  const handleReject = async (id) => {
     if (!confirm('¿Rechazar esta reseña?')) return;
-    rejectReview(id);
-    setPendingReviews(getPendingReviews());
+    try {
+      await rejectReview(id);
+      await fetchPending();
+    } catch (e) {
+      console.error('[ReviewsPanel] Error rejecting review:', e);
+      alert('Error al rechazar la reseña.');
+    }
   };
 
-  const published = content.reviews?.published || [];
-  const pendingCount = pendingReviews.length;
+  const published = Array.isArray(content.reviews?.published) ? content.reviews.published : [];
+  const pendingCount = Array.isArray(pendingReviews) ? pendingReviews.length : 0;
 
   const StarDisplay = ({ rating }) => (
     <div style={{ display: 'flex', gap: 2 }}>
