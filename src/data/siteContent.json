@@ -1,0 +1,262 @@
+{
+  "brand": {
+    "name": "Elky Studios",
+    "tagline": "Inmortalizando tus momentos más preciosos",
+    "description": "Elevando la narrativa visual a través de la excelencia cinematográfica y fotográfica para eventos exclusivos.",
+    "logo": {
+      "elky": "Elky",
+      "studio": "Studio"
+    }
+  },
+  "theme": {
+    "primaryColor": "#0a0a0a",
+    "secondaryColor": "#bf953f",
+    "backgroundColor": "#fafafa",
+    "fontDisplay": "Playfair Display",
+    "fontBody": "Montserrat",
+    "fontCursive": "Great Vibes"
+  },
+  "home": {
+    "hero": {
+      "title": "Inmortalizando tus momentos más preciosos",
+      "subtitle": "Capturando la esencia de cada emoción con una visión artística y cinematográfica que trasciende el tiempo.",
+      "ctaPrimary": "Ver Portafolio",
+      "ctaSecondary": "Reservar Cita",
+      "backgroundImage": ""
+    },
+    "intro": {
+      "tag": "Nuestra Historia",
+      "title": "El Arte detrás de la Lente",
+      "body": "Con más de una década documentando las historias de amor más exclusivas y los eventos corporativos más prestigiosos...",
+      "ctaText": "Conoce más sobre nosotros →",
+      "image": ""
+    },
+    "cta": {
+      "title": "¿Listo para capturar tu próxima gran historia?",
+      "subtitle": "Estamos disponibles para proyectos locales e internacionales."
+    }
+  },
+  "contact": {
+    "whatsapp": "+51 999 000 000",
+    "whatsappLink": "https://wa.me/51999000000",
+    "email": "contacto@elkystudios.com",
+    "instagram": "@elkystudios",
+    "instagramLink": "https://instagram.com/elkystudios",
+    "address": "Lima, Perú",
+    "city": "Lima, Perú"
+  },
+  "services": {
+    "hero": {
+      "title": "Servicios y Paquetes",
+      "subtitle": "Cada evento es una obra de arte en movimiento."
+    },
+    "banner": {
+      "tag": "Oferta de Temporada",
+      "title": "Reserva tu Boda de Invierno",
+      "description": "Obtén un 15% de descuento en el Paquete Full Evento y una sesión de pre-boda de cortesía.",
+      "active": true
+    },
+    "basePackages": [
+      {
+        "id": "basic",
+        "title": "Paquete Básico",
+        "subtitle": "Esenciales de Calidad",
+        "basePrice": 800,
+        "currency": "S/",
+        "isPrimary": false,
+        "image": "",
+        "features": ["6 Horas de cobertura", "Galería digital privada", "Edición profesional básica"]
+      },
+      {
+        "id": "premium",
+        "title": "Paquete Premium",
+        "subtitle": "Nuestra Recomendación",
+        "basePrice": 1500,
+        "currency": "S/",
+        "isPrimary": true,
+        "image": "",
+        "features": ["10 Horas de cobertura", "Video highlight (5-7 min)", "Álbum físico de lujo", "Entrega en USB premium"]
+      },
+      {
+        "id": "full",
+        "title": "Paquete Full Evento",
+        "subtitle": "Experiencia Completa",
+        "basePrice": 2800,
+        "currency": "S/",
+        "isPrimary": false,
+        "image": "",
+        "features": ["Cobertura ilimitada", "Dos fotógrafos senior", "Sesión pre-boda incluida", "Video documental completo"]
+      }
+    ],
+    "categoryOverrides": {
+      "Bodas": {
+        "multiplier": 1.4,
+        "note": "Incluye sesión pre-boda de cortesía",
+        "active": true,
+        "packageOverrides": {
+          "basic": { "customPrice": null, "image": "", "extraFeatures": [] },
+          "premium": { "customPrice": null, "image": "", "extraFeatures": ["Drone coverage"] },
+          "full": { "customPrice": null, "image": "", "extraFeatures": [] }
+        },
+        "extraPackages": []
+      },
+      "Quinceañeros": {
+        "multiplier": 1.1,
+        "note": "Incluye sesión de preparativos",
+        "active": true,
+        "packageOverrides": {
+          "basic": { "customPrice": null, "image": "", "extraFeatures": [] },
+          "premium": { "customPrice": null, "image": "", "extraFeatures": [] },
+          "full": { "customPrice": null, "image": "", "extraFeatures": [] }
+        },
+        "extraPackages": []
+      },
+      "Fiestas Infantiles": {
+        "multiplier": 0.9,
+        "note": "",
+        "active": true,
+        "packageOverrides": {
+          "basic": { "customPrice": null, "image": "", "extraFeatures": [] },
+          "premium": { "customPrice": null, "image": "", "extraFeatures": [] },
+          "full": { "customPrice": null, "image": "", "extraFeatures": [] }
+        },
+        "extraPackages": []
+      },
+      "Compromisos": {
+        "multiplier": 1.0,
+        "note": "",
+        "active": true,
+        "packageOverrides": {
+          "basic": { "customPrice": null, "image": "", "extraFeatures": [] },
+          "premium": { "customPrice": null, "image": "", "extraFeatures": [] },
+          "full": { "customPrice": null, "image": "", "extraFeatures": [] }
+        },
+        "extraPackages": []
+      },
+      "Bautizos": {
+        "multiplier": 0.95,
+        "note": "",
+        "active": true,
+        "packageOverrides": {
+          "basic": { "customPrice": null, "image": "", "extraFeatures": [] },
+          "premium": { "customPrice": null, "image": "", "extraFeatures": [] },
+          "full": { "customPrice": null, "image": "", "extraFeatures": [] }
+        },
+        "extraPackages": []
+      },
+      "Eventos Corporativos": {
+        "multiplier": 1.3,
+        "note": "Entrega express disponible",
+        "active": true,
+        "packageOverrides": {
+          "basic": { "customPrice": null, "image": "", "extraFeatures": [] },
+          "premium": { "customPrice": null, "image": "", "extraFeatures": [] },
+          "full": { "customPrice": null, "image": "", "extraFeatures": [] }
+        },
+        "extraPackages": []
+      },
+      "Sesiones Personales": {
+        "multiplier": 0.7,
+        "note": "Sesión de 2-3 horas en locación",
+        "active": true,
+        "packageOverrides": {
+          "basic": { "customPrice": null, "image": "", "extraFeatures": [] },
+          "premium": { "customPrice": null, "image": "", "extraFeatures": [] },
+          "full": { "customPrice": null, "image": "", "extraFeatures": [] }
+        },
+        "extraPackages": []
+      }
+    }
+  },
+  "calendar": {
+    "bookedDates": [
+      {"year": 2025, "month": 4, "day": 8},
+      {"year": 2025, "month": 4, "day": 9},
+      {"year": 2025, "month": 4, "day": 15}
+    ],
+    "consultDates": [
+      {"year": 2025, "month": 4, "day": 5},
+      {"year": 2025, "month": 4, "day": 13}
+    ]
+  },
+  "footer": {
+    "tagline": "Elevando la cinematografía de eventos a un estándar de alta costura.",
+    "copyright": "2024 ELKY STUDIOS. ALL RIGHTS RESERVED."
+  },
+  "promos": {
+    "homePopup": {
+      "enabled": true,
+      "title": "Ofertas Especiales",
+      "subtitle": "Captura tus momentos más importantes",
+      "frequency": "daily",
+      "delaySeconds": 2,
+      "cards": [
+        {
+          "id": "promo-1",
+          "category": "Bodas",
+          "title": "Paquete Boda Completa",
+          "description": "Cobertura total de tu día especial con el mejor equipo",
+          "price": "S/1400",
+          "currency": "S/",
+          "features": ["10 horas de cobertura", "Video highlight", "Álbum físico de lujo"],
+          "image": "",
+          "ctaText": "Conocer más",
+          "ctaLink": "/services?tipo=Bodas",
+          "whatsappText": "Hola! Me interesa el paquete de Bodas",
+          "active": true
+        },
+        {
+          "id": "promo-2",
+          "category": "Quinceañeros",
+          "title": "Quinceañera Premium",
+          "description": "Inmortaliza el debut más especial con elegancia y arte",
+          "price": "S/800",
+          "currency": "S/",
+          "features": ["8 horas de cobertura", "Sesión previa incluida", "Galería digital privada"],
+          "image": "",
+          "ctaText": "Conocer más",
+          "ctaLink": "/services?tipo=Quinceañeros",
+          "whatsappText": "Hola! Me interesa el paquete de Quinceañera",
+          "active": true
+        },
+        {
+          "id": "promo-3",
+          "category": "Bautizos",
+          "title": "Bautizo Especial",
+          "description": "Un momento sagrado capturado con delicadeza y profesionalismo",
+          "price": "S/500",
+          "currency": "S/",
+          "features": ["4 horas de cobertura", "Galería digital", "Edición profesional"],
+          "image": "",
+          "ctaText": "Conocer más",
+          "ctaLink": "/services?tipo=Bautizos",
+          "whatsappText": "Hola! Me interesa el paquete de Bautizo",
+          "active": true
+        },
+        {
+          "id": "promo-4",
+          "category": "Fiestas Infantiles",
+          "title": "Fiesta Mágica",
+          "description": "Captura la alegría y magia de los pequeños momentos grandes",
+          "price": "S/400",
+          "currency": "S/",
+          "features": ["3 horas de cobertura", "50+ fotos editadas", "Entrega en 48h"],
+          "image": "",
+          "ctaText": "Conocer más",
+          "ctaLink": "/services?tipo=Fiestas Infantiles",
+          "whatsappText": "Hola! Me interesa el paquete de Fiesta Infantil",
+          "active": true
+        }
+      ]
+    },
+    "portfolioPopup": {
+      "enabled": true,
+      "delaySeconds": 60,
+      "title": "¿Te gusta lo que ves?",
+      "subtitle": "Tenemos el paquete perfecto para ti",
+      "ctaText": "Ver paquetes",
+      "showCountdown": true,
+      "countdownSeconds": 10
+    }
+  }
+}

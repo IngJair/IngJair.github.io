@@ -1,0 +1,136 @@
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #0a0a0a;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(191, 149, 63, 0.2);
+  min-height: clamp(85px, 12vw, 120px);
+  display: flex;
+  align-items: center;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  transition: background 0.3s ease;
+}
+
+.navbar--scrolled {
+  background: rgba(10, 10, 10, 0.97);
+}
+
+.navbar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--container-padding);
+  width: 100%;
+}
+
+/* ===== Logo Styles ===== */
+.navbar__logo-wrapper {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  padding: 4px 0;
+}
+
+.navbar__logo-img {
+  height: clamp(70px, 10vw, 110px);
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.navbar__links {
+  display: flex;
+  align-items: center;
+  gap: var(--element-gap);
+}
+
+.navbar__link {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(15px, 1.4vw, 18px);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  padding-bottom: 4px;
+}
+
+.navbar__link:hover {
+  color: #bf953f;
+}
+
+.navbar__link--active {
+  color: #bf953f;
+  border-bottom: 2px solid #bf953f;
+}
+
+.navbar__cta {
+  white-space: nowrap;
+  background: #bf953f !important;
+  color: #0a0a0a !important;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 12px 24px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+}
+
+.navbar__cta:hover {
+  background: #d4a843 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(191, 149, 63, 0.3);
+}
+
+.navbar__hamburger {
+  display: none;
+  background: none;
+  border: none;
+  color: #ffffff;
+  padding: 4px;
+}
+
+.navbar__mobile {
+  display: none;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px var(--container-padding) 32px;
+  background: #0a0a0a;
+  border-top: 1px solid rgba(191, 149, 63, 0.1);
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    padding-left: 20px;
+    padding-right: 20px;
+    min-height: 80px;
+  }
+
+  .navbar__logo-img {
+    height: clamp(52px, 13vw, 75px);
+  }
+
+  .navbar__links { display: none; }
+  .navbar__cta { display: none; }
+  .navbar__hamburger { display: block; }
+  .navbar__mobile { display: flex; }
+  
+  .navbar__mobile-link {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 20px;
+    color: #ffffff;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    text-decoration: none;
+  }
+  
+  .navbar__mobile-link.navbar__link--active {
+    color: #bf953f;
+  }
+}

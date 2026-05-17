@@ -1,0 +1,297 @@
+.contact-hero {
+  padding: 96px var(--container-padding) 48px;
+  text-align: center;
+}
+.contact-hero__sub { color: var(--on-surface-variant); max-width: 640px; margin: 16px auto 0; }
+
+.contact-main {
+  display: grid;
+  grid-template-columns: 7fr 4fr;
+  gap: 80px;
+}
+.contact-form { display: flex; flex-direction: column; gap: 48px; }
+.contact-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--element-gap); }
+.contact-form__field { display: flex; flex-direction: column; gap: 8px; }
+.contact-form__field label { color: var(--on-surface-variant); }
+.contact-form__input {
+  border: none;
+  border-bottom: 1px solid var(--outline-variant);
+  padding: 16px 0;
+  font-size: 18px;
+  color: var(--on-surface);
+  background: transparent;
+  transition: border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
+  width: 100%;
+  font-family: var(--font-body);
+}
+.contact-form__input:focus { border-bottom-color: var(--primary); outline: none; }
+.contact-form__input::placeholder { color: rgba(196,199,199,0.5); }
+.contact-form__select { appearance: none; cursor: pointer; }
+.contact-form__textarea { resize: none; }
+
+.contact-form__input--error {
+  border-color: var(--error);
+  background: rgba(186,26,26,0.02);
+}
+.contact-form__input--error:focus {
+  border-bottom-color: var(--error);
+  box-shadow: 0 1px 0 0 var(--error);
+}
+
+.contact-form__error-msg {
+  font-size: 12px;
+  color: var(--error);
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.contact-form__success {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: rgba(76,175,80,0.1);
+  border: 1px solid #4caf50;
+  border-radius: 4px;
+  color: #2e7d32;
+}
+
+.contact-info { margin-top: 64px; }
+.contact-info__title { margin-bottom: 32px; }
+.contact-info__items { display: flex; flex-direction: column; gap: 16px; }
+
+.contact-info__item--link {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: var(--surface-container-lowest);
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  color: inherit;
+}
+.contact-info__item--link:hover {
+  border-color: var(--secondary);
+}
+.contact-info__item--link:hover .contact-info__arrow {
+  opacity: 1;
+  transform: translate(4px, -4px);
+}
+
+.contact-info__icon { color: var(--secondary); margin-top: 2px;}
+.contact-info__label { color: var(--on-surface-variant); margin-bottom: 4px; }
+.contact-info__arrow {
+  margin-left: auto;
+  font-size: 16px;
+  color: var(--secondary);
+  transition: transform 0.3s, opacity 0.3s;
+  opacity: 0;
+}
+
+.contact-map { margin-top: 48px; }
+.contact-map__label { color: var(--on-surface-variant); margin-bottom: 16px; }
+.contact-map__img-wrap {
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  filter: grayscale(1);
+  transition: filter 0.7s;
+  border-radius: 6px;
+}
+.contact-map__img-wrap:hover { filter: grayscale(0); }
+.contact-map__img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Calendar */
+.contact-calendar__header { text-align: center; margin-bottom: 64px; }
+.contact-calendar__desc { color: var(--on-surface-variant); margin-top: 16px; }
+.contact-calendar__box {
+  background: var(--surface);
+  padding: 48px;
+  border: 1px solid rgba(196,199,199,0.2);
+  max-width: 900px;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+.contact-calendar__nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 48px; }
+.contact-calendar__arrows { display: flex; gap: 16px; }
+.contact-calendar__arrow {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--outline-variant);
+  background: none;
+  color: var(--primary);
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+.contact-calendar__arrow:hover { border-color: var(--secondary); background: rgba(119, 90, 25, 0.05); }
+
+.contact-calendar__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 16px; margin-bottom: 32px; }
+.contact-calendar__day-header { text-align: center; padding: 8px 0; }
+.contact-calendar__day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: 14px;
+  border: 1px solid var(--outline-variant);
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+.contact-calendar__day:hover:not(.contact-calendar__day--prev):not(.contact-calendar__day--booked) {
+  background: var(--secondary-fixed);
+  border-color: transparent;
+  cursor: pointer;
+}
+.contact-calendar__day--prev { color: rgba(196,199,199,0.3); border-color: transparent; }
+.contact-calendar__day--booked { background: var(--primary); color: var(--on-primary); border-color: var(--primary); cursor: not-allowed; }
+.contact-calendar__day--consult { background: var(--surface-container-high); border-color: transparent; cursor: pointer; }
+.contact-calendar__dot {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 4px;
+  height: 4px;
+  background: var(--secondary);
+  border-radius: 50%;
+}
+
+.contact-calendar__legend {
+  display: flex;
+  justify-content: center;
+  gap: var(--element-gap);
+  padding-top: 32px;
+  border-top: 1px solid rgba(196,199,199,0.1);
+}
+.contact-calendar__legend-item { display: flex; align-items: center; gap: 8px; }
+.contact-calendar__legend-box { width: 12px; height: 12px; border-radius: 2px;}
+.contact-calendar__legend-box--booked { background: var(--primary); }
+.contact-calendar__legend-box--available { border: 1px solid var(--outline-variant); }
+.contact-calendar__legend-box--consult { background: var(--surface-container-high); }
+
+.contact-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 60px 40px;
+  gap: 24px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: 8px;
+  min-height: 400px;
+  justify-content: center;
+}
+
+.contact-success__icon-wrap {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(76, 175, 80, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contact-success__icon {
+  font-size: 48px;
+  color: #4caf50;
+}
+
+.contact-success__msg {
+  max-width: 400px;
+  color: var(--on-surface-variant);
+}
+
+.contact-success__actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.contact-success__actions .btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.contact-calendar__day--selected {
+  background: var(--secondary) !important;
+  color: #fff !important;
+  border-color: var(--secondary) !important;
+  font-weight: 700;
+}
+
+.contact-form__char-count {
+  text-align: right;
+  font-size: 12px;
+  color: var(--on-surface-variant);
+  margin-top: 4px;
+}
+
+.contact-form__char-count--warning {
+  color: var(--error);
+  font-weight: 600;
+}
+
+.contact-form__response-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--surface-container-low);
+  border-radius: 6px;
+  color: var(--on-surface-variant);
+  font-size: 13px;
+}
+
+.contact-form__response-time .material-symbols-outlined {
+  font-size: 18px;
+  color: var(--secondary);
+}
+
+.contact-whatsapp-fab {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #25d366;
+  color: white;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
+  z-index: 500;
+  text-decoration: none;
+}
+
+.contact-whatsapp-fab .material-symbols-outlined {
+  font-size: 28px;
+}
+
+@media (max-width: 1024px) {
+  .contact-main { grid-template-columns: 1fr; gap: 40px; }
+  .contact-info { margin-top: 0; }
+}
+@media (max-width: 768px) {
+  .contact-main { grid-template-columns: 1fr; }
+  .contact-form__row { grid-template-columns: 1fr; }
+  .contact-calendar__box { padding: 24px; }
+  .contact-whatsapp-fab {
+    display: flex;
+  }
+}
+@media (max-width: 480px) {
+  .contact-form__input { font-size: 16px; }
+  .contact-calendar__grid { gap: 8px; }
+  .contact-calendar__legend { flex-direction: column; align-items: flex-start; }
+}
