@@ -46,6 +46,11 @@ export default function Portfolio() {
 
   const filteredItems = useMemo(() => {
     return allEvents.filter(item => {
+      // 1. Limpieza automática de renderizado: No renderizar ninguna card si no cumple requisitos mínimos
+      if (!item?.title?.trim() || !(item?.coverImage || item?.image)?.trim() || !item?.category?.trim()) {
+        return false;
+      }
+
       // Filtro categoría
       const matchesCategory = activeCategory === 'Todos' || item.category === activeCategory;
       

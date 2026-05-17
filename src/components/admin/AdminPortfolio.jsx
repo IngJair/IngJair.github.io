@@ -120,7 +120,7 @@ export default function AdminPortfolio() {
             />
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
-              {(portfolio.events || []).slice(0, 6).map((event, i) => (
+              {(portfolio.events || []).filter(e => e?.title?.trim() && e?.coverImage?.trim() && e?.category?.trim()).slice(0, 6).map((event, i) => (
                 <div key={event.id || i} style={{ cursor: 'pointer' }}>
                   <div style={{ aspectRatio: '4/3', background: '#111', borderRadius: 4, overflow: 'hidden', marginBottom: 12 }}>
                     {event.coverImage
@@ -260,7 +260,8 @@ function CategoryYearEditor({ categories, years, onUpdateCategories, onUpdateYea
 
 // Componente EventCard - Definido fuera para evitar re-renders innecesarios
 function EventCard({ event, isSelected, onSelect, onDelete }) {
-  const hasNoCover = !event.coverImage;
+  const isIncomplete = !event.title?.trim() || !event.coverImage?.trim() || !event.category?.trim();
+  const displayTitle = event.title?.trim() ? event.title : 'Proyecto incompleto';
   return (
     <div
       onClick={onSelect}
@@ -292,18 +293,18 @@ function EventCard({ event, isSelected, onSelect, onDelete }) {
             </div>
         }
 
-        {/* Badge ⚠ si no tiene portada */}
-        {hasNoCover && (
+        {/* Badge ⚠ si incompleto */}
+        {isIncomplete && (
           <div style={{
             position: 'absolute', top: 6, right: 6,
-            background: '#ff9800', color: '#fff',
+            background: '#c62828', color: '#fff',
             borderRadius: 4, padding: '2px 6px',
             fontSize: 10, fontWeight: 700,
             display: 'flex', alignItems: 'center', gap: 3,
             zIndex: 2
           }}>
             <span className="material-symbols-outlined" style={{ fontSize: 12 }}>warning</span>
-            Sin foto
+            Incompleto
           </div>
         )}
 
@@ -333,14 +334,14 @@ function EventCard({ event, isSelected, onSelect, onDelete }) {
       {/* Info */}
       <div style={{ padding: '10px 12px' }}>
         <p style={{
-          fontSize: 13, fontWeight: 700, color: '#0a0a0a',
+          fontSize: 13, fontWeight: 700, color: isIncomplete ? '#c62828' : '#0a0a0a',
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           margin: '0 0 3px'
         }}>
-          {event.title}
+          {displayTitle}
         </p>
         <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>
-          {event.year} · {(event.media || []).length} arch.
+          {event.category || 'Sin categoría'} · {event.year} · {(event.media || []).length} arch.
         </p>
       </div>
 
@@ -370,7 +371,10 @@ function GalleryEditor({ events, categories, years, onUpdate }) {
   const categoryEvents = events.filter(e => e.category === activeCategory);
 
   const handleCreateEvent = () => {
-    if (!modalTitle.trim()) return;
+    if (!modalTitle.trim() || !modalCat?.trim() || !modalCover?.trim()) {
+      alert("Completa los campos mínimos antes de guardar el proyecto.");
+      return;
+    }
     const slug = modalTitle.toLowerCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-');
@@ -588,7 +592,7 @@ function GalleryEditor({ events, categories, years, onUpdate }) {
                   : <div style={{ height: '100%', display: 'flex', flexDirection: 'column',
                       alignItems: 'center', justifyContent: 'center', gap: 8, color: '#aaa' }}>
                       <span className="material-symbols-outlined" style={{ fontSize: 36 }}>add_photo_alternate</span>
-                      <span style={{ fontSize: 13 }}>Subir foto de portada (opcional)</span>
+                      <span style={{ fontSize: 13 }}>Subir foto de portada * (Requerido)</span>
                     </div>
                 }
               </label>
@@ -615,7 +619,7 @@ function GalleryEditor({ events, categories, years, onUpdate }) {
                     placeholder="Ej: Boda de Ana y Carlos"
                     value={modalTitle}
                     onChange={e => setModalTitle(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && modalTitle.trim() && handleCreateEvent()}
+                    onKeyDown={e => e.key === 'Enter' && modalTitle.trim() && modalCat?.trim() && modalCover?.trim() && handleCreateEvent()}
                     onFocus={e => e.target.style.borderColor = '#bf953f'}
                     onBlur={e => e.target.style.borderColor = '#e0e0e0'}
                   />
@@ -623,7 +627,7 @@ function GalleryEditor({ events, categories, years, onUpdate }) {
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: '#888',
                     textTransform: 'uppercase', display: 'block', marginBottom: 5 }}>
-                    Categoría
+                    Categoría *
                   </label>
                   <select style={{ width: '100%', padding: '10px 14px',
                     border: '1px solid #e0e0e0', borderRadius: 8, fontSize: 13 }}
@@ -653,13 +657,13 @@ function GalleryEditor({ events, categories, years, onUpdate }) {
                   Cancelar
                 </button>
                 <button
-                  disabled={!modalTitle.trim()}
+                  disabled={!modalTitle.trim() || !modalCat?.trim() || !modalCover?.trim()}
                   onClick={handleCreateEvent}
                   style={{
                     flex: 2, padding: '11px', border: 'none',
-                    background: modalTitle.trim() ? '#0a0a0a' : '#e0e0e0',
-                    color: modalTitle.trim() ? '#fff' : '#aaa',
-                    borderRadius: 8, cursor: modalTitle.trim() ? 'pointer' : 'not-allowed',
+                    background: (modalTitle.trim() && modalCat?.trim() && modalCover?.trim()) ? '#0a0a0a' : '#e0e0e0',
+                    color: (modalTitle.trim() && modalCat?.trim() && modalCover?.trim()) ? '#fff' : '#aaa',
+                    borderRadius: 8, cursor: (modalTitle.trim() && modalCat?.trim() && modalCover?.trim()) ? 'pointer' : 'not-allowed',
                     fontSize: 13, fontWeight: 700, transition: 'all 0.15s'
                   }}>
                   Crear evento

@@ -434,6 +434,13 @@ function mergeContent(parsed) {
     portfolio: {
       ...defaultContent.portfolio,
       ...(parsed.portfolio || {}),
+      events: (parsed.portfolio?.events || defaultContent.portfolio.events).filter(item => {
+        const hasTitle = Boolean(item?.title?.trim());
+        const hasCategory = Boolean(item?.category?.trim());
+        const hasImage = Boolean((item?.coverImage || item?.image)?.trim());
+        // Eliminar automáticamente si está completamente vacía al cargar
+        return hasTitle || hasCategory || hasImage;
+      })
     },
     reviews: {
       ...defaultContent.reviews,
