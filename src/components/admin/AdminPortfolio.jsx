@@ -111,6 +111,33 @@ export default function AdminPortfolio() {
         isEditing={isEditing('port-gallery')}
       >
         <section style={{ padding: '0 clamp(24px, 8vw, 120px) clamp(60px, 10vw, 120px)', background: '#fafafa' }}>
+          {/* BOTÓN DE LIMPIEZA AUTOMÁTICA */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20, paddingTop: 20 }}>
+            <button
+              onClick={() => {
+                if (confirm("¿Estás seguro de eliminar automáticamente todos los proyectos de prueba, incompletos o con imágenes rotas/vacías?")) {
+                  const placeholders = ['wjdwodw', 'elena & julián', 'sofía, el debut', 'lanzamiento innova', 'retrato de otoño', 'bautizo de mateo', 'aventuras de leo', 'promesa en la cima'];
+                  const cleaned = (portfolio.events || []).filter(item => {
+                    const titleLower = (item?.title || '').toLowerCase().trim();
+                    if (!titleLower) return false;
+                    if (placeholders.includes(titleLower)) return false;
+                    const img = (item?.coverImage || item?.image || '').trim();
+                    if (!img) return false;
+                    if (!img.startsWith('http://') && !img.startsWith('https://') && !img.startsWith('/')) return false;
+                    if (img.includes('lh3.googleusercontent.com')) return false;
+                    return true;
+                  });
+                  update('portfolio.events', cleaned);
+                  alert(`Limpieza completada. Se mantuvieron ${cleaned.length} proyectos reales.`);
+                }
+              }}
+              style={{ background: '#ff9800', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 12px rgba(255,152,0,0.3)' }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>cleaning_services</span>
+              Eliminar proyectos de prueba/incompletos
+            </button>
+          </div>
+
           {isEditing('port-gallery') ? (
             <GalleryEditor
               events={portfolio.events || []}
@@ -120,9 +147,9 @@ export default function AdminPortfolio() {
             />
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
-              {(portfolio.events || []).filter(e => e?.title?.trim() && e?.coverImage?.trim() && e?.category?.trim()).slice(0, 6).map((event, i) => (
-                <div key={event.id || i} style={{ cursor: 'pointer' }}>
-                  <div style={{ aspectRatio: '4/3', background: '#111', borderRadius: 4, overflow: 'hidden', marginBottom: 12 }}>
+              {(portfolio.events || []).slice(0, 6).map((event, i) => (
+                <div key={event.id || i} style={{ cursor: 'pointer', position: 'relative', border: '1px solid #eee', borderRadius: 8, padding: 12, background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                  <div style={{ aspectRatio: '4/3', background: '#111', borderRadius: 4, overflow: 'hidden', marginBottom: 12, position: 'relative' }}>
                     {event.coverImage
                       ? <img src={event.coverImage} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1a1a1a,#333)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', fontSize: 13 }}>
@@ -130,8 +157,25 @@ export default function AdminPortfolio() {
                         </div>
                     }
                   </div>
-                  <p style={{ fontSize: 11, color: '#bf953f', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{event.category}</p>
-                  <h3 style={{ fontSize: 18, fontFamily: 'Playfair Display, serif' }}>{event.title}</h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <p style={{ fontSize: 11, color: '#bf953f', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{event.category}</p>
+                      <h3 style={{ fontSize: 18, fontFamily: 'Playfair Display, serif', margin: 0 }}>{event.title || 'Proyecto incompleto'}</h3>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`¿Eliminar "${event.title || 'Proyecto'}" del portafolio?`)) {
+                          const updated = (portfolio.events || []).filter(item => item.id !== event.id);
+                          update('portfolio.events', updated);
+                        }
+                      }}
+                      style={{ background: '#c62828', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>delete</span>
+                      Eliminar
+                    </button>
+                  </div>
                 </div>
               ))}
               {(portfolio.events || []).length === 0 && (
@@ -322,12 +366,13 @@ function EventCard({ event, isSelected, onSelect, onDelete }) {
           onClick={e => { e.stopPropagation(); onDelete(); }}
           style={{
             position: 'absolute', bottom: 6, right: 6,
-            background: 'rgba(0,0,0,0.5)', border: 'none',
-            borderRadius: 4, padding: 4, cursor: 'pointer', color: '#fff',
-            display: 'flex', alignItems: 'center', zIndex: 2
+            background: '#c62828', border: 'none',
+            borderRadius: 4, padding: '4px 8px', cursor: 'pointer', color: '#fff',
+            display: 'flex', alignItems: 'center', gap: 4, zIndex: 2, fontSize: 11, fontWeight: 700
           }}
         >
           <span className="material-symbols-outlined" style={{ fontSize: 14 }}>delete</span>
+          Eliminar
         </button>
       </div>
 

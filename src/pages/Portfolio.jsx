@@ -44,13 +44,29 @@ export default function Portfolio() {
   const categories = portfolioContent.categories || staticCategories;
   const years = portfolioContent.years || staticYears;
 
-  const filteredItems = useMemo(() => {
+  const validEvents = useMemo(() => {
     return allEvents.filter(item => {
-      // 1. Limpieza automática de renderizado: No renderizar ninguna card si no cumple requisitos mínimos
-      if (!item?.title?.trim() || !(item?.coverImage || item?.image)?.trim() || !item?.category?.trim()) {
-        return false;
-      }
+      const titleLower = (item?.title || '').toLowerCase().trim();
+      if (!titleLower) return false;
+      
+      const placeholders = ['wjdwodw', 'elena & julián', 'sofía, el debut', 'lanzamiento innova', 'retrato de otoño', 'bautizo de mateo', 'aventuras de leo', 'promesa en la cima'];
+      if (placeholders.includes(titleLower)) return false;
 
+      const img = (item?.coverImage || item?.image || '').trim();
+      if (!img) return false;
+      
+      if (!img.startsWith('http://') && !img.startsWith('https://') && !img.startsWith('/')) return false;
+      
+      if (img.includes('lh3.googleusercontent.com')) return false;
+
+      if (!item?.category?.trim()) return false;
+
+      return true;
+    });
+  }, [allEvents]);
+
+  const filteredItems = useMemo(() => {
+    return validEvents.filter(item => {
       // Filtro categoría
       const matchesCategory = activeCategory === 'Todos' || item.category === activeCategory;
       
@@ -68,7 +84,7 @@ export default function Portfolio() {
       
       return matchesCategory && matchesYear && matchesSearch;
     });
-  }, [searchQuery, activeCategory, activeYear, allEvents]);
+  }, [searchQuery, activeCategory, activeYear, validEvents]);
 
   return (
     <PageTransition>
@@ -173,7 +189,18 @@ export default function Portfolio() {
       <section className="port-gallery section-padding">
         <div className="container">
           <AnimatePresence mode="popLayout">
-            {filteredItems.length === 0 ? (
+            {validEvents.length === 0 ? (
+              <motion.div
+                className="port-empty"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+              >
+                <span className="material-symbols-outlined port-empty__icon" style={{ fontSize: 48, marginBottom: 16 }}>photo_library</span>
+                <h3 className="text-headline-md">Aún no hay proyectos publicados</h3>
+                <p className="text-body-md" style={{ color: '#888' }}>Vuelve pronto para descubrir nuestras últimas producciones.</p>
+              </motion.div>
+            ) : filteredItems.length === 0 ? (
               <motion.div
                 className="port-empty"
                 initial={{ opacity: 0, y: 20 }}
