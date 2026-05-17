@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useSiteContent } from '../../context/SiteContentContext';
 import { AdminSection, AdminField } from './AdminField';
+import { useStorageUpload } from '../../lib/useStorageUpload';
 
 const PORTFOLIO_TABS = [
   { id: 'texts', label: 'Textos de la página', icon: 'title' },
@@ -395,33 +396,35 @@ function PortfolioEventsTab({ portfolio, update }) {
 
 function EventEditor({ event, categories, years, onUpdate, onUpdateMedia }) {
   const [youtubeUrl, setYoutubeUrl] = useState('');
+  const { uploadFile, uploading } = useStorageUpload();
 
-  const handleCoverUpload = (e) => {
+  const handleCoverUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => onUpdate('coverImage', ev.target.result);
-    reader.readAsDataURL(file);
+    e.target.value = '';
+    const url = await uploadFile(file, 'imagenes', event.coverImage);
+    if (url) onUpdate('coverImage', url);
   };
 
-  const handleMediaUpload = (e) => {
+  const handleMediaUpload = async (e) => {
     const files = Array.from(e.target.files);
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = ev => {
-        const isVideo = file.type.startsWith('video/');
+    e.target.value = '';
+    for (const file of files) {
+      const isVideo = file.type.startsWith('video/');
+      const folder = isVideo ? 'videos' : 'imagenes';
+      const url = await uploadFile(file, folder);
+      if (url) {
         const newItem = {
           id: Date.now() + Math.random(),
           type: isVideo ? 'video' : 'image',
-          src: ev.target.result,
+          src: url,
           alt: file.name,
           caption: '',
           captionStyle: { fontSize: '14px', bold: false, italic: false, color: '#ffffff' }
         };
         onUpdateMedia([...(event.media || []), newItem]);
-      };
-      reader.readAsDataURL(file);
-    });
+      }
+    }
   };
 
   const addYoutubeVideo = () => {
@@ -500,17 +503,22 @@ function EventEditor({ event, categories, years, onUpdate, onUpdateMedia }) {
           <h2 className="admin-section__title">Foto de Portada</h2>
         </div>
         <div className="admin-section__body">
-          <label htmlFor={`cover-${event.id}`} className="admin-image-upload" style={{ cursor: 'pointer' }}>
-            {event.coverImage
+          <label htmlFor={`cover-${event.id}`} className="admin-image-upload" style={{ cursor: uploading ? 'wait' : 'pointer' }}>
+            {uploading ? (
+              <div className="admin-image-placeholder">
+                <span className="material-symbols-outlined" style={{ animation: 'spin 1s linear infinite' }}>sync</span>
+                <span>Subiendo imagen...</span>
+              </div>
+            ) : event.coverImage
               ? <img src={event.coverImage} alt="Portada" className="admin-image-preview" />
               : <div className="admin-image-placeholder">
                   <span className="material-symbols-outlined">add_photo_alternate</span>
-                  <span>Click para subir foto de portada</span>
+                  <span>Click para subir foto de portada (JPG/PNG/WebP, máx 2MB)</span>
                 </div>
             }
           </label>
-          <input id={`cover-${event.id}`} type="file" accept="image/*"
-            style={{ display: 'none' }} onChange={handleCoverUpload} />
+          <input id={`cover-${event.id}`} type="file" accept="image/jpeg,image/png,image/webp"
+            style={{ display: 'none' }} onChange={handleCoverUpload} disabled={uploading} />
         </div>
       </div>
 
@@ -520,12 +528,14 @@ function EventEditor({ event, categories, years, onUpdate, onUpdateMedia }) {
         </div>
         <div className="admin-section__body">
           <div className="admin-media-actions">
-            <label htmlFor={`media-${event.id}`} className="admin-btn admin-btn--primary" style={{ cursor: 'pointer' }}>
-              <span className="material-symbols-outlined">add_photo_alternate</span>
-              Subir fotos/videos
+            <label htmlFor={`media-${event.id}`} className="admin-btn admin-btn--primary" style={{ cursor: uploading ? 'wait' : 'pointer' }}>
+              <span className="material-symbols-outlined" style={{ animation: uploading ? 'spin 1s linear infinite' : 'none' }}>
+                {uploading ? 'sync' : 'add_photo_alternate'}
+              </span>
+              {uploading ? 'Subiendo...' : 'Subir fotos/videos'}
             </label>
-            <input id={`media-${event.id}`} type="file" accept="image/*,video/*"
-              multiple style={{ display: 'none' }} onChange={handleMediaUpload} />
+            <input id={`media-${event.id}`} type="file" accept="image/jpeg,image/png,image/webp,video/mp4"
+              multiple style={{ display: 'none' }} onChange={handleMediaUpload} disabled={uploading} />
           </div>
 
           <div className="admin-youtube-row">

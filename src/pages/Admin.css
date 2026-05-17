@@ -37,6 +37,8 @@
   gap: 8px;
   flex: 1;
   justify-content: center;
+  min-width: 0;
+  overflow-x: auto;
 }
 .admin-topbar__tab {
   display: flex;
@@ -401,6 +403,13 @@
   letter-spacing: 0.1em;
   color: #bf953f;
   margin-bottom: 16px;
+}
+
+@media (max-width: 1300px) {
+  .admin-topbar { padding: 0 16px; gap: 12px; }
+  .admin-topbar__tab { padding: 8px 10px; gap: 4px; font-size: 12px; }
+  .admin-topbar__btn { padding: 8px 12px; font-size: 12px; }
+  .admin-topbar__btn--save { min-width: 90px; }
 }
 
 @media (max-width: 768px) {

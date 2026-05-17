@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useStorageUpload } from '../../lib/useStorageUpload';
 
 export function EditableSection({ children, sectionKey, label, onEdit, isEditing }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -59,16 +60,16 @@ export function EditableText({ tag: Tag = 'div', value, onChange, isEditing, sty
   );
 }
 
-export function EditableImage({ src, alt, onChange, isEditing, className = '', style = {} }) {
+export function EditableImage({ src, alt, onChange, isEditing, className = '', style = {}, folder = 'imagenes' }) {
   const fileInputRef = useRef(null);
+  const { uploadFile, uploading } = useStorageUpload();
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => onChange(ev.target.result);
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    e.target.value = '';
+    const url = await uploadFile(file, folder, src);
+    if (url) onChange(url);
   };
 
   return (
@@ -76,15 +77,18 @@ export function EditableImage({ src, alt, onChange, isEditing, className = '', s
       <img src={src} alt={alt} className={className} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       
       {isEditing && (
-        <div className="editable-image__overlay" onClick={() => fileInputRef.current.click()}>
-          <span className="material-symbols-outlined">add_photo_alternate</span>
-          <span>Reemplazar Imagen</span>
+        <div className="editable-image__overlay" onClick={() => !uploading && fileInputRef.current.click()}>
+          <span className="material-symbols-outlined" style={{ animation: uploading ? 'spin 1s linear infinite' : 'none' }}>
+            {uploading ? 'sync' : 'add_photo_alternate'}
+          </span>
+          <span>{uploading ? 'Subiendo...' : 'Reemplazar Imagen'}</span>
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             style={{ display: 'none' }}
             onChange={handleFileChange}
+            disabled={uploading}
           />
         </div>
       )}

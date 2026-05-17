@@ -324,3 +324,10 @@ img {
   height: calc(var(--vh, 1vh) * 100);
   min-height: 500px;
 }
+
+/* Upload spinner */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+

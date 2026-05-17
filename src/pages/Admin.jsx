@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSiteContent, ADMIN_PASSWORD } from '../context/SiteContentContext';
+import { supabase } from '../lib/supabase';
 
 // Páginas del editor inline
 import AdminHome from '../components/admin/AdminHome';
@@ -58,27 +59,36 @@ export default function Admin() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    const result = save();
+    const result = await save();
     
     // Pequeño delay artificial para feedback visual si es muy rápido
     setTimeout(() => {
       setIsSaving(false);
-      if (result.success) {
+      if (result && result.success) {
         setSaveToast(true);
         setTimeout(() => setSaveToast(false), 2500);
       } else {
-        alert(result.error || "Error al guardar. Es posible que el almacenamiento local esté lleno.");
+        alert(result?.error || "Error al guardar. Verifique su conexión o almacenamiento.");
       }
     }, 400);
   };
 
   useEffect(() => {
-    const checkPending = () => {
-      const pending = JSON.parse(localStorage.getItem('luxe_pending_reviews') || '[]');
-      setPendingCount(pending.length);
+    const checkPending = async () => {
+      try {
+        const { count } = await supabase
+          .from('pending_reviews')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+        setPendingCount(count || 0);
+      } catch (_) {
+        // Fallback: localStorage
+        const pending = JSON.parse(localStorage.getItem('luxe_pending_reviews') || '[]');
+        setPendingCount(pending.length);
+      }
     };
     checkPending();
-    const interval = setInterval(checkPending, 5000); // Poll every 5s
+    const interval = setInterval(checkPending, 10000); // Poll cada 10s
     return () => clearInterval(interval);
   }, []);
 

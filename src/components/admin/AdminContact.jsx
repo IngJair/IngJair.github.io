@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
 import { motion } from 'framer-motion';
 import { useSiteContent } from '../../context/SiteContentContext';
 import { EditableSection } from './EditorHelpers';
@@ -18,18 +19,55 @@ export default function AdminContact() {
   const contact = content.contact || {};
   const workZones = contact.workZones || [];
 
-  // Cargar solicitudes de reserva
+  // Cargar solicitudes de reserva desde Supabase (con fallback a localStorage)
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('luxe_reservation_requests') || '[]');
-    if (stored.length > 0) {
-      const existing = content.calendar?.reservationRequests || [];
-      const alreadyIn = existing.map(r => r.id);
-      const toAdd = stored.filter(r => !alreadyIn.includes(r.id));
-      if (toAdd.length > 0) {
-        update('calendar.reservationRequests', [...existing, ...toAdd]);
-        localStorage.removeItem('luxe_reservation_requests');
+    async function loadRequests() {
+      let incoming = [];
+
+      // 1. Intentar Supabase
+      try {
+        const { data, error } = await supabase
+          .from('contact_requests')
+          .select('*')
+          .eq('status', 'pending')
+          .order('submitted_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          incoming = data.map(r => ({
+            id: r.id,
+            clientName: r.client_name,
+            email: r.email,
+            phone: r.phone,
+            eventType: r.event_type,
+            message: r.message,
+            year: r.year,
+            month: r.month,
+            day: r.day,
+            status: r.status,
+            submittedAt: r.submitted_at,
+          }));
+        }
+      } catch (e) {
+        console.warn('[Supabase] loadRequests fallback a localStorage:', e.message);
+      }
+
+      // 2. Fallback: localStorage (por si Supabase no responde o la tabla no existe aún)
+      if (incoming.length === 0) {
+        const stored = JSON.parse(localStorage.getItem('luxe_reservation_requests') || '[]');
+        incoming = stored;
+      }
+
+      if (incoming.length > 0) {
+        const existing = content.calendar?.reservationRequests || [];
+        const alreadyIn = existing.map(r => r.id);
+        const toAdd = incoming.filter(r => !alreadyIn.includes(r.id));
+        if (toAdd.length > 0) {
+          update('calendar.reservationRequests', [...existing, ...toAdd]);
+          localStorage.removeItem('luxe_reservation_requests');
+        }
       }
     }
+    loadRequests();
   }, [content.calendar?.reservationRequests, update]);
 
   const labelStyle = { fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', display: 'block', marginBottom: 4 };

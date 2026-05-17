@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageTransition from '../components/PageTransition';
 import InteractiveMap from '../components/InteractiveMap';
@@ -142,7 +143,7 @@ export default function Contact() {
     setLoading(true);
     await new Promise(r => setTimeout(r, 800));
 
-    // 1. Guardar solicitud de reserva localmente para el editor
+    // 1. Guardar solicitud de reserva en Supabase (con fallback a localStorage)
     if (form.date) {
       const selectedDate = new Date(form.date + 'T00:00:00');
       const reservationRequest = {
@@ -159,9 +160,25 @@ export default function Contact() {
         submittedAt: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
       };
 
-      const existing = JSON.parse(localStorage.getItem('luxe_reservation_requests') || '[]');
-      existing.push(reservationRequest);
-      localStorage.setItem('luxe_reservation_requests', JSON.stringify(existing));
+      try {
+        await supabase.from('contact_requests').insert([{
+          client_name: reservationRequest.clientName,
+          email: reservationRequest.email,
+          phone: reservationRequest.phone,
+          event_type: reservationRequest.eventType,
+          message: reservationRequest.message,
+          event_date: form.date,
+          year: reservationRequest.year,
+          month: reservationRequest.month,
+          day: reservationRequest.day,
+          status: 'pending',
+        }]);
+      } catch (e) {
+        // Fallback silencioso: guardar en localStorage para que el admin pueda verlo
+        const existing = JSON.parse(localStorage.getItem('luxe_reservation_requests') || '[]');
+        existing.push(reservationRequest);
+        localStorage.setItem('luxe_reservation_requests', JSON.stringify(existing));
+      }
     }
 
     // 2. Generar mensaje WhatsApp

@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSiteContent } from '../../context/SiteContentContext';
+import { ImageUploadZone } from '../../lib/useStorageUpload';
 
 export default function PromosPanel() {
   const { content, update } = useSiteContent();
@@ -277,43 +278,13 @@ export default function PromosPanel() {
                           <span className="material-symbols-outlined" style={{ fontSize: 15 }}>image</span>
                           Imagen del anuncio
                         </p>
-                        <label htmlFor={`promo-img-${card.id}`}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 16,
-                            cursor: 'pointer', padding: 12,
-                            border: '2px dashed #333', borderRadius: 8,
-                            background: '#111', transition: 'border-color 0.2s',
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.borderColor = '#bf953f'}
-                          onMouseLeave={e => e.currentTarget.style.borderColor = '#333'}
-                        >
-                          {card.image ? (
-                            <>
-                              <img src={card.image} style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 6 }} />
-                              <div>
-                                <p style={{ fontSize: 13, color: '#fff', fontWeight: 600 }}>Imagen cargada ✓</p>
-                                <p style={{ fontSize: 11, color: '#666' }}>Click para cambiarla</p>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div style={{ width: 80, height: 60, background: '#222', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <span className="material-symbols-outlined" style={{ fontSize: 28, color: '#444' }}>add_photo_alternate</span>
-                              </div>
-                              <div>
-                                <p style={{ fontSize: 13, color: '#bf953f', fontWeight: 600 }}>Subir imagen</p>
-                                <p style={{ fontSize: 11, color: '#666' }}>JPG, PNG — Recomendado: 800×500px</p>
-                              </div>
-                            </>
-                          )}
-                        </label>
-                        <input id={`promo-img-${card.id}`} type="file" accept="image/*" style={{ display: 'none' }}
-                          onChange={e => {
-                            const file = e.target.files[0]; if (!file) return;
-                            const reader = new FileReader();
-                            reader.onload = ev => updateCard(i, 'image', ev.target.result);
-                            reader.readAsDataURL(file);
-                          }} />
+                        <ImageUploadZone
+                          currentUrl={card.image}
+                          onUploaded={url => updateCard(i, 'image', url)}
+                          folder="banners"
+                          label="Subir imagen del anuncio (JPG/PNG/WebP, máx 2MB)"
+                          aspectRatio="16/9"
+                        />
                       </div>
 
                       {/* SECCIÓN INFO BÁSICA */}

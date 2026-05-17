@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 const SiteContentContext = createContext(null);
 
@@ -405,82 +406,221 @@ Podrias darme mas informacion?`,
   }
 };
 
+// Merge defensivo para asegurar que campos nuevos siempre existan
+function mergeContent(parsed) {
+  return {
+    ...defaultContent,
+    ...parsed,
+    services: {
+      ...defaultContent.services,
+      ...(parsed.services || {}),
+      banner: {
+        ...defaultContent.services.banner,
+        ...(parsed.services?.banner || {}),
+      },
+      basePackages: parsed.services?.basePackages || defaultContent.services.basePackages,
+      categoryOverrides: parsed.services?.categoryOverrides || defaultContent.services.categoryOverrides,
+    },
+    calendar: {
+      ...defaultContent.calendar,
+      ...(parsed.calendar || {}),
+    },
+    portfolio: {
+      ...defaultContent.portfolio,
+      ...(parsed.portfolio || {}),
+    },
+    reviews: {
+      ...defaultContent.reviews,
+      ...(parsed.reviews || {}),
+    },
+    promos: {
+      ...defaultContent.promos,
+      ...(parsed.promos || {}),
+    },
+  };
+}
+
 export function SiteContentProvider({ children }) {
-  const [content, setContent] = useState(() => {
-    try {
-      const saved = localStorage.getItem('luxe_content');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // Merge recursivo defensivo para asegurar que campos nuevos existan
-        return {
-          ...defaultContent,
-          ...parsed,
-          services: {
-            ...defaultContent.services,
-            ...(parsed.services || {}),
-            banner: {
-              ...defaultContent.services.banner,
-              ...(parsed.services?.banner || {}),
-            },
-            basePackages: parsed.services?.basePackages || defaultContent.services.basePackages,
-            categoryOverrides: parsed.services?.categoryOverrides || defaultContent.services.categoryOverrides,
-          },
-          calendar: {
-            ...defaultContent.calendar,
-            ...(parsed.calendar || {}),
-          },
-          portfolio: {
-            ...defaultContent.portfolio,
-            ...(parsed.portfolio || {})
-          },
-          reviews: {
-            ...defaultContent.reviews,
-            ...(parsed.reviews || {}),
-          },
-          promos: {
-            ...defaultContent.promos,
-            ...(parsed.promos || {})
-          }
-        };
-      }
-    } catch (e) {
-      console.error('Error loading content:', e);
-    }
-    return defaultContent;
-  });
+  const [content, setContent] = useState(defaultContent);
   const [hasUnsaved, setHasUnsaved] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Carga inicial: Supabase SIEMPRE primero
+  useEffect(() => {
+    async function loadContent() {
+      // ─── INTENTO 1: Leer desde Supabase ─────────────────────────────────
+      let supabaseOk = false;
+      let supabaseData = null;
+      let supabaseError = null;
+
+      try {
+        console.log('[Sync] Loading from Supabase...');
+        const result = await supabase
+          .from('site_content')
+          .select('data')
+          .eq('id', 'main')
+          .maybeSingle(); // maybeSingle() devuelve null (sin error) si no hay fila
+
+        supabaseOk = true; // Supabase respondió (aunque no haya datos)
+        supabaseData = result.data;
+        supabaseError = result.error;
+      } catch (e) {
+        console.warn('[Sync] Using local fallback — Supabase unreachable:', e.message);
+      }
+
+      // ─── CASO A: Supabase tiene datos → usarlos directamente ────────────
+      if (supabaseOk && supabaseData?.data) {
+        console.log('[Sync] ✅ Loaded from Supabase');
+        setContent(mergeContent(supabaseData.data));
+        setIsLoading(false);
+        return;
+      }
+
+      // ─── CASO B: Supabase OK pero vacío → intentar migrar localStorage ──
+      if (supabaseOk && !supabaseData) {
+        const localRaw = localStorage.getItem('luxe_content');
+        if (localRaw) {
+          try {
+            const localParsed = JSON.parse(localRaw);
+            console.log('[Sync] Migrating local content to Supabase...');
+            const { error: upsertError } = await supabase
+              .from('site_content')
+              .upsert({ id: 'main', data: localParsed, updated_at: new Date().toISOString() });
+
+            if (!upsertError) {
+              console.log('[Sync] ✅ Migration successful — now using Supabase');
+              setContent(mergeContent(localParsed));
+              // Marcar como migrado para no volver a depender de localStorage
+              localStorage.setItem('luxe_migrated_to_supabase', 'true');
+            } else {
+              console.warn('[Sync] Migration upsert error:', upsertError.message);
+              setContent(mergeContent(localParsed));
+            }
+          } catch (e) {
+            console.warn('[Sync] Migration parse error:', e.message);
+          }
+        } else {
+          // Supabase vacío y localStorage vacío → usar defaultContent (primer arranque)
+          console.log('[Sync] Fresh start — no saved content anywhere');
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      // ─── CASO C: Supabase offline o error de red → fallback localStorage ─
+      console.warn('[Sync] Using local fallback — Supabase error:', supabaseError?.message);
+      try {
+        const saved = localStorage.getItem('luxe_content');
+        if (saved) {
+          setContent(mergeContent(JSON.parse(saved)));
+          console.log('[Sync] ⚠️ Loaded from localStorage (offline mode)');
+        }
+      } catch (e) {
+        console.error('[Sync] localStorage fallback error:', e);
+      }
+      setIsLoading(false);
+    }
+    loadContent();
+  }, []);
 
   // Guardar reseña pendiente (desde el formulario público)
-  const submitReview = useCallback((reviewData) => {
+  const submitReview = useCallback(async (reviewData) => {
     const newReview = {
       ...reviewData,
       id: Date.now(),
       date: new Date().toISOString().split('T')[0],
       status: 'pending',
     };
-    
-    // Guardar en localStorage separado para pendientes
-    const pending = JSON.parse(localStorage.getItem('luxe_pending_reviews') || '[]');
-    pending.push(newReview);
-    localStorage.setItem('luxe_pending_reviews', JSON.stringify(pending));
-    
+
+    // Intentar Supabase primero
+    try {
+      await supabase.from('pending_reviews').insert([{
+        name: newReview.name,
+        event: newReview.event,
+        event_type: newReview.eventType,
+        package: newReview.package,
+        text: newReview.text,
+        rating: newReview.rating,
+        photo: newReview.photo || '',
+        date: newReview.date,
+        status: 'pending',
+      }]);
+    } catch (e) {
+      // Fallback: localStorage
+      const pending = JSON.parse(localStorage.getItem('luxe_pending_reviews') || '[]');
+      pending.push(newReview);
+      localStorage.setItem('luxe_pending_reviews', JSON.stringify(pending));
+    }
     return newReview;
   }, []);
 
   // Cargar reseñas pendientes (para el editor)
-  const getPendingReviews = useCallback(() => {
+  const getPendingReviews = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('pending_reviews')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        // Normalizar campo de Supabase al formato del contexto
+        return data.map(r => ({
+          id: r.id,
+          name: r.name,
+          event: r.event,
+          eventType: r.event_type,
+          package: r.package,
+          text: r.text,
+          rating: r.rating,
+          photo: r.photo,
+          date: r.date,
+          status: r.status,
+        }));
+      }
+    } catch (e) {
+      console.warn('[Supabase] getPendingReviews fallback:', e.message);
+    }
+    // Fallback: localStorage
     return JSON.parse(localStorage.getItem('luxe_pending_reviews') || '[]');
   }, []);
 
   // Publicar una reseña pendiente
-  const publishReview = useCallback((reviewId, editedData = null) => {
-    const pending = JSON.parse(localStorage.getItem('luxe_pending_reviews') || '[]');
-    const review = pending.find(r => r.id === reviewId);
-    if (!review) return;
-    
+  const publishReview = useCallback(async (reviewId, editedData = null) => {
+    let review = null;
+
+    // Buscar en Supabase
+    try {
+      const { data } = await supabase
+        .from('pending_reviews')
+        .select('*')
+        .eq('id', reviewId)
+        .single();
+      if (data) {
+        review = {
+          id: data.id, name: data.name, event: data.event,
+          eventType: data.event_type, package: data.package,
+          text: data.text, rating: data.rating, photo: data.photo,
+          date: data.date, status: 'published',
+        };
+        // Marcar como publicada en Supabase
+        await supabase.from('pending_reviews').update({ status: 'published' }).eq('id', reviewId);
+      }
+    } catch (e) {
+      console.warn('[Supabase] publishReview fallback:', e.message);
+    }
+
+    // Fallback: buscar en localStorage
+    if (!review) {
+      const pending = JSON.parse(localStorage.getItem('luxe_pending_reviews') || '[]');
+      review = pending.find(r => r.id === reviewId);
+      if (!review) return;
+      const newPending = pending.filter(r => r.id !== reviewId);
+      localStorage.setItem('luxe_pending_reviews', JSON.stringify(newPending));
+    }
+
     const toPublish = editedData ? { ...review, ...editedData } : review;
     toPublish.status = 'published';
-    
+
     setContent(prev => ({
       ...prev,
       reviews: {
@@ -488,17 +628,18 @@ export function SiteContentProvider({ children }) {
         published: [...(prev.reviews?.published || []), toPublish],
       }
     }));
-    
-    // Remover de pendientes
-    const newPending = pending.filter(r => r.id !== reviewId);
-    localStorage.setItem('luxe_pending_reviews', JSON.stringify(newPending));
     setHasUnsaved(true);
   }, []);
 
   // Rechazar reseña pendiente
-  const rejectReview = useCallback((reviewId) => {
-    const pending = JSON.parse(localStorage.getItem('luxe_pending_reviews') || '[]');
-    localStorage.setItem('luxe_pending_reviews', JSON.stringify(pending.filter(r => r.id !== reviewId)));
+  const rejectReview = useCallback(async (reviewId) => {
+    try {
+      await supabase.from('pending_reviews').update({ status: 'rejected' }).eq('id', reviewId);
+    } catch (e) {
+      // Fallback: localStorage
+      const pending = JSON.parse(localStorage.getItem('luxe_pending_reviews') || '[]');
+      localStorage.setItem('luxe_pending_reviews', JSON.stringify(pending.filter(r => r.id !== reviewId)));
+    }
   }, []);
 
   // Eliminar reseña publicada
@@ -563,22 +704,48 @@ export function SiteContentProvider({ children }) {
     setHasUnsaved(true);
   }, [syncCategoryOverrides]);
 
-  const save = useCallback(() => {
+  const save = useCallback(async () => {
+    // 1. Intentar guardar en Supabase
+    try {
+      const { error } = await supabase
+        .from('site_content')
+        .upsert({ id: 'main', data: content, updated_at: new Date().toISOString() });
+
+      if (!error) {
+        // Espejo en localStorage por si Supabase no está disponible la próxima carga
+        try { localStorage.setItem('luxe_content', JSON.stringify(content)); } catch (_) {}
+        setHasUnsaved(false);
+        return { success: true };
+      }
+      console.warn('[Supabase] Error al guardar:', error.message);
+    } catch (e) {
+      console.warn('[Supabase] Error de red al guardar:', e.message);
+    }
+
+    // 2. Fallback: localStorage
     try {
       localStorage.setItem('luxe_content', JSON.stringify(content));
       setHasUnsaved(false);
       return { success: true };
     } catch (e) {
-      console.error("Error al guardar en localStorage:", e);
+      console.error('[localStorage] Error al guardar:', e);
       return { success: false, error: 'Almacenamiento lleno. Reduce el contenido del portafolio.' };
     }
   }, [content]);
 
-  const reset = useCallback(() => {
+  const reset = useCallback(async () => {
     if (confirm('¿Restaurar todo el contenido original?')) {
       setContent(defaultContent);
       localStorage.removeItem('luxe_content');
       setHasUnsaved(false);
+      // También borrar en Supabase (upsert con default)
+      try {
+        await supabase
+          .from('site_content')
+          .upsert({ id: 'main', data: defaultContent, updated_at: new Date().toISOString() });
+      } catch (e) {
+        console.warn('[Supabase] reset fallback silencioso:', e.message);
+      }
     }
   }, []);
 
@@ -588,7 +755,8 @@ export function SiteContentProvider({ children }) {
       update, 
       updateContent: update, // Aliased for compatibility
       save, 
-      hasUnsaved, 
+      hasUnsaved,
+      isLoading,
       reset,
       submitReview,
       getPendingReviews,
