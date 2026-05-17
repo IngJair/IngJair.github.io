@@ -293,10 +293,21 @@ export default function PromosPanel() {
                     >
                       {/* SECCIÓN IMAGEN */}
                       <div style={{ padding: '20px 24px', background: '#1a1a1a', borderBottom: '1px solid #333' }}>
-                        <p style={{ fontSize: 11, fontWeight: 700, color: '#bf953f', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span className="material-symbols-outlined" style={{ fontSize: 15 }}>image</span>
-                          Imagen del anuncio
-                        </p>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                          <p style={{ fontSize: 11, fontWeight: 700, color: '#bf953f', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>image</span>
+                            Imagen del anuncio
+                          </p>
+                          {card.image && (
+                            <button
+                              onClick={() => updateCard(i, 'image', '')}
+                              style={{ background: 'rgba(198,40,40,0.15)', border: '1px solid #c62828', color: '#ffcdd2', padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                            >
+                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>delete</span>
+                              Eliminar imagen
+                            </button>
+                          )}
+                        </div>
                         <ImageUploadZone
                           currentUrl={card.image}
                           onUploaded={url => updateCard(i, 'image', url)}
@@ -304,6 +315,9 @@ export default function PromosPanel() {
                           label="Subir imagen del anuncio (JPG/PNG/WebP, máx 2MB)"
                           aspectRatio="16/9"
                         />
+                        <p style={{ fontSize: 11, color: '#888', marginTop: 8, margin: 0 }}>
+                          Haz click sobre la imagen para reemplazarla por otra.
+                        </p>
                       </div>
 
                       {/* SECCIÓN INFO BÁSICA */}

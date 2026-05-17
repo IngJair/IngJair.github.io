@@ -448,6 +448,7 @@ function mergeContent(parsed) {
         maxDisplayed: parsed.promos?.homePopup?.maxDisplayed ?? defaultContent.promos.homePopup.maxDisplayed,
         cards: (parsed.promos?.homePopup?.cards || defaultContent.promos.homePopup.cards).map(c => ({
           ...c,
+          image: c.image || '',
           showOnHomePopup: c.showOnHomePopup ?? true
         }))
       }

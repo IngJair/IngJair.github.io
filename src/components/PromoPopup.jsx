@@ -34,46 +34,58 @@ const markPopupShown = (popupKey) => {
 
 // ===== POPUP DE HOME — 4 cards de precios =====
 export function HomePromoPopup() {
-  const { content } = useSiteContent();
+  const { content, loadingContent } = useSiteContent();
   const [visible, setVisible] = useState(false);
   const [activeCard, setActiveCard] = useState(0);
+  const [shuffledCards, setShuffledCards] = useState([]);
   const navigate = useNavigate();
   
-  const promos = content.promos?.homePopup;
-  if (!promos) return null;
-  
-  const activeCards = (promos.cards || []).filter(c => c.active && c.showOnHomePopup !== false);
+  const promos = content?.promos?.homePopup;
 
   useEffect(() => {
-    if (!promos?.enabled || activeCards.length === 0) {
+    if (loadingContent) {
+      console.log("Popup waiting for content");
       return;
     }
-    
+
+    if (!promos || !promos.enabled) {
+      return;
+    }
+
+    const activeCards = (promos.cards || []).filter(c => c.active && c.showOnHomePopup !== false);
+    console.log("Popup available ads:", activeCards);
+
+    if (activeCards.length === 0) {
+      return;
+    }
+
     const show = shouldShowPopup('home', promos.frequency || 'daily');
     if (!show) {
+      console.log("Popup blocked by frequency");
       return;
     }
-    
-    const delay = (promos.delaySeconds || 2) * 1000;
-    
-    const timer = setTimeout(() => {
-      setVisible(true);
-      markPopupShown('home');
-    }, delay);
-    
-    return () => clearTimeout(timer);
-  }, [promos?.enabled, promos?.delaySeconds, promos?.frequency]);
 
-  // Mezclar cards aleatoriamente al montar y limitar a maxDisplayed
-  const [shuffledCards] = useState(() => {
+    // Elegir cantidad aleatoria según configuración
     const cards = [...activeCards];
     for (let i = cards.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [cards[i], cards[j]] = [cards[j], cards[i]];
     }
     const max = promos.maxDisplayed || 4;
-    return cards.slice(0, max);
-  });
+    const selected = cards.slice(0, max);
+    console.log("Popup selected ads:", selected);
+
+    setShuffledCards(selected);
+
+    const delay = (promos.delaySeconds || 2) * 1000;
+    const timer = setTimeout(() => {
+      setVisible(true);
+      markPopupShown('home');
+      console.log("Popup shown");
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [loadingContent, promos]);
 
   const handleClose = () => setVisible(false);
 
@@ -83,10 +95,12 @@ export function HomePromoPopup() {
   };
 
   const handleWhatsApp = (card) => {
-    const whatsappNumber = (content.contact?.whatsapp || '').replace(/[^0-9]/g, '');
+    const whatsappNumber = (content?.contact?.whatsapp || '').replace(/[^0-9]/g, '');
     const msg = encodeURIComponent(card.whatsappText || 'Hola, me interesa un paquete');
     window.open(`https://wa.me/${whatsappNumber}?text=${msg}`, '_blank');
   };
+
+  if (loadingContent || !promos || shuffledCards.length === 0) return null;
 
   return (
     <AnimatePresence>
@@ -208,15 +222,15 @@ export function HomePromoPopup() {
 
 // ===== POPUP DE PORTFOLIO — contextual por categoría =====
 export function PortfolioPromoPopup({ activeCategory }) {
-  const { content } = useSiteContent();
+  const { content, loadingContent } = useSiteContent();
   const [visible, setVisible] = useState(false);
   const [countdown, setCountdown] = useState(null);
   const timerRef = useRef(null);
   const countdownRef = useRef(null);
   const navigate = useNavigate();
 
-  const promos = content.promos?.portfolioPopup;
-  const homePromos = content.promos?.homePopup;
+  const promos = content?.promos?.portfolioPopup;
+  const homePromos = content?.promos?.homePopup;
 
   // Obtener la card de promo para la categoría activa
   const getCategoryPromo = () => {
@@ -225,8 +239,8 @@ export function PortfolioPromoPopup({ activeCategory }) {
   };
 
   const getCategoryPackages = () => {
-    const basePackages = content.services?.basePackages || []
-    const override = content.services?.categoryOverrides?.[activeCategory]
+    const basePackages = content?.services?.basePackages || []
+    const override = content?.services?.categoryOverrides?.[activeCategory]
     const multiplier = override?.multiplier || 1
     const pkgOverrides = override?.packageOverrides || {}
 
@@ -263,7 +277,7 @@ export function PortfolioPromoPopup({ activeCategory }) {
   }
 
   const handlePackageWhatsApp = (pkg) => {
-    const template = content.contact?.whatsappMessageTemplate ||
+    const template = content?.contact?.whatsappMessageTemplate ||
       `Hola! Me interesa el siguiente paquete:
 
 Paquete: {{paquete}}
@@ -280,13 +294,14 @@ Podrias darme mas informacion?`
       seccion: activeCategory,
       descripcion: pkg.features || [],
       precio: `${pkg.currency || 'S/'}${(pkg.finalPrice || pkg.basePrice)?.toLocaleString()}`,
-      negocio: content.brand?.name || '',
-      whatsappNumber: content.contact?.whatsapp || ''
+      negocio: content?.brand?.name || '',
+      whatsappNumber: content?.contact?.whatsapp || ''
     })
     window.open(link, '_blank')
   }
 
   useEffect(() => {
+    if (loadingContent) return;
     if (!promos?.enabled || !activeCategory || activeCategory === 'Todos') {
       return;
     }
