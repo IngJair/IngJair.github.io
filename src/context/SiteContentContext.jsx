@@ -35,6 +35,7 @@ const defaultContent = {
     ctaSecondaryStyle: { fontSize: '13px', bold: true, italic: false, underline: false, color: '#ffffff' },
     ctaSecondaryDestination: '/contact',
     backgroundImage: '/hero.png',
+    mobileBackgroundImage: '',
   },
   intro: {
     tag: 'Nuestra Historia',
@@ -335,6 +336,7 @@ Podrias darme mas informacion?`,
       subtitle: "Captura tus momentos más importantes",
       frequency: "daily",
       delaySeconds: 2,
+      maxDisplayed: 4,
       cards: [
         {
           id: "promo-1",
@@ -348,7 +350,8 @@ Podrias darme mas informacion?`,
           ctaText: "Conocer más",
           ctaLink: "/services?tipo=Bodas",
           whatsappText: "Hola! Me interesa el paquete de Bodas",
-          active: true
+          active: true,
+          showOnHomePopup: true
         },
         {
           id: "promo-2",
@@ -362,7 +365,8 @@ Podrias darme mas informacion?`,
           ctaText: "Conocer más",
           ctaLink: "/services?tipo=Quinceañeros",
           whatsappText: "Hola! Me interesa el paquete de Quinceañera",
-          active: true
+          active: true,
+          showOnHomePopup: true
         },
         {
           id: "promo-3",
@@ -376,7 +380,8 @@ Podrias darme mas informacion?`,
           ctaText: "Conocer más",
           ctaLink: "/services?tipo=Bautizos",
           whatsappText: "Hola! Me interesa el paquete de Bautizo",
-          active: true
+          active: true,
+          showOnHomePopup: true
         },
         {
           id: "promo-4",
@@ -390,7 +395,8 @@ Podrias darme mas informacion?`,
           ctaText: "Conocer más",
           ctaLink: "/services?tipo=Fiestas Infantiles",
           whatsappText: "Hola! Me interesa el paquete de Fiesta Infantil",
-          active: true
+          active: true,
+          showOnHomePopup: true
         }
       ]
     },
@@ -436,6 +442,15 @@ function mergeContent(parsed) {
     promos: {
       ...defaultContent.promos,
       ...(parsed.promos || {}),
+      homePopup: {
+        ...defaultContent.promos.homePopup,
+        ...(parsed.promos?.homePopup || {}),
+        maxDisplayed: parsed.promos?.homePopup?.maxDisplayed ?? defaultContent.promos.homePopup.maxDisplayed,
+        cards: (parsed.promos?.homePopup?.cards || defaultContent.promos.homePopup.cards).map(c => ({
+          ...c,
+          showOnHomePopup: c.showOnHomePopup ?? true
+        }))
+      }
     },
   };
 }
@@ -712,6 +727,7 @@ export function SiteContentProvider({ children }) {
         .upsert({ id: 'main', data: content, updated_at: new Date().toISOString() });
 
       if (!error) {
+        console.log("Save content success");
         // Espejo en localStorage por si Supabase no está disponible la próxima carga
         try { localStorage.setItem('luxe_content', JSON.stringify(content)); } catch (_) {}
         setHasUnsaved(false);
@@ -724,6 +740,7 @@ export function SiteContentProvider({ children }) {
 
     // 2. Fallback: localStorage
     try {
+      console.log("Save content success");
       localStorage.setItem('luxe_content', JSON.stringify(content));
       setHasUnsaved(false);
       return { success: true };
@@ -757,6 +774,7 @@ export function SiteContentProvider({ children }) {
       save, 
       hasUnsaved,
       isLoading,
+      loadingContent: isLoading,
       reset,
       submitReview,
       getPendingReviews,

@@ -418,21 +418,80 @@ export default function AdminHome() {
                 />
               </EditableLink>
             </div>
-
-            {isEditing('hero') && (
-              <div style={{ marginTop: '40px' }}>
-                <EditableImage
-                  src={hero.backgroundImage}
-                  alt="Background"
-                  onChange={(v) => update('hero.backgroundImage', v)}
-                  isEditing={true}
-                  style={{ width: '200px', height: '120px', margin: '0 auto', borderRadius: '8px', border: '2px solid #bf953f' }}
-                />
-                <p style={{ fontSize: '12px', color: '#bf953f', marginTop: '8px', fontWeight: 700 }}>CAMBIAR FONDO</p>
-              </div>
-            )}
           </div>
         </section>
+
+        {/* PANEL CLARO DE CONFIGURACIÓN DE IMÁGENES DE FONDO (VISIBLE AL EDITAR) */}
+        {isEditing('hero') && (
+          <div style={{
+            background: '#fff',
+            border: '1px solid #e8d9b5',
+            borderRadius: '12px',
+            padding: '28px',
+            margin: '24px auto',
+            maxWidth: '960px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.08)'
+          }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0a0a0a', marginBottom: '24px', borderBottom: '2px solid #bf953f', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="material-symbols-outlined" style={{ color: '#bf953f' }}>wallpaper</span>
+              Configuración de Imágenes de Fondo del Hero
+            </h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
+              {/* Bloque 1: Desktop */}
+              <div style={{ background: '#fafafa', border: '1px solid #eee', borderRadius: '10px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#333', marginBottom: '6px' }}>Imagen para PC / Desktop</h4>
+                <p style={{ fontSize: '12px', color: '#666', marginBottom: '16px', textAlign: 'center' }}>Recomendado 1920x1080 o 1600x900</p>
+                <div style={{ width: '100%', height: '180px', marginBottom: '16px', borderRadius: '8px', overflow: 'hidden', border: '2px solid #bf953f' }}>
+                  <EditableImage
+                    src={hero.backgroundImage}
+                    alt="Hero Desktop"
+                    onChange={(v) => update('hero.backgroundImage', v)}
+                    isEditing={true}
+                    label="Reemplazar imagen Desktop"
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                </div>
+                <div style={{ width: '100%', marginTop: 'auto' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#888', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Enfoque Desktop</label>
+                  <select className="admin-input" value={hero.imagePosition || 'center center'} onChange={e => update('hero.imagePosition', e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px', background: '#fff' }}>
+                    <option value="center center">Centro</option>
+                    <option value="center top">Arriba</option>
+                    <option value="center bottom">Abajo</option>
+                    <option value="left center">Izquierda</option>
+                    <option value="right center">Derecha</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Bloque 2: Mobile */}
+              <div style={{ background: '#fafafa', border: '1px solid #eee', borderRadius: '10px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#333', marginBottom: '6px' }}>Imagen para celular / Mobile</h4>
+                <p style={{ fontSize: '12px', color: '#666', marginBottom: '16px', textAlign: 'center' }}>Recomendado 1080x1920 o 900x1600</p>
+                <div style={{ width: '120px', height: '180px', marginBottom: '16px', borderRadius: '8px', overflow: 'hidden', border: '2px solid #bf953f' }}>
+                  <EditableImage
+                    src={hero.mobileBackgroundImage || hero.backgroundImage}
+                    alt="Hero Mobile"
+                    onChange={(v) => update('hero.mobileBackgroundImage', v)}
+                    isEditing={true}
+                    label="Reemplazar imagen Mobile"
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                </div>
+                <div style={{ width: '100%', marginTop: 'auto' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#888', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Enfoque Mobile</label>
+                  <select className="admin-input" value={hero.mobileImagePosition || 'center center'} onChange={e => update('hero.mobileImagePosition', e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px', background: '#fff' }}>
+                    <option value="center center">Centro</option>
+                    <option value="center top">Arriba</option>
+                    <option value="center bottom">Abajo</option>
+                    <option value="left center">Izquierda</option>
+                    <option value="right center">Derecha</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </EditableSection>
 
       {/* INTRO SECTION */}

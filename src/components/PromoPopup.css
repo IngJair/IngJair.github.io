@@ -437,7 +437,7 @@
 
 @media (max-width: 900px) {
   .promo-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(min(var(--card-count, 2), 2), 1fr) !important;
   }
   .promo-card { border-right: none; border-bottom: 1px solid #f0f0f0; }
   .promo-card:nth-child(2n) { border-right: none; }
@@ -486,10 +486,10 @@
 
   /* Grid 2x2 muy compacto */
   .promo-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(min(var(--card-count, 2), 2), 1fr) !important;
     gap: 0;
     flex: 1;
-    overflow: hidden; /* Sin scroll interno */
+    overflow-y: auto; /* Permitir scroll si hay muchas cards */
   }
 
   .promo-card {

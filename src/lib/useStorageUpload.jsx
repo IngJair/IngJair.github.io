@@ -12,7 +12,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from './supabase';
 
-const BUCKET = 'elky-media';
+const BUCKET = 'elky-studios';
 
 // ─── Validaciones ────────────────────────────────────────────────────────────
 const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'webp'];
@@ -156,6 +156,7 @@ export function ImageUploadZone({
   folder = 'imagenes',
   label = 'Subir imagen',
   aspectRatio = '16/9',
+  isHero = false,
 }) {
   const { uploadFile, uploading, error, setError } = useStorageUpload();
   const inputId = `upload-${folder}-${Math.random().toString(36).slice(2)}`;
@@ -164,8 +165,12 @@ export function ImageUploadZone({
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = ''; // Reset para poder re-subir el mismo archivo
+    if (isHero) console.log("Uploading hero image...");
     const url = await uploadFile(file, folder, currentUrl);
-    if (url) onUploaded(url);
+    if (url) {
+      if (isHero) console.log("Upload success:", url);
+      onUploaded(url);
+    }
   };
 
   return (

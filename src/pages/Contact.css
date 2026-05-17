@@ -272,6 +272,7 @@
   box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
   z-index: 500;
   text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .contact-whatsapp-fab .material-symbols-outlined {
@@ -283,11 +284,22 @@
   .contact-info { margin-top: 0; }
 }
 @media (max-width: 768px) {
-  .contact-main { grid-template-columns: 1fr; }
-  .contact-form__row { grid-template-columns: 1fr; }
-  .contact-calendar__box { padding: 24px; }
+  .contact-hero { padding: 64px var(--container-padding) 32px; width: 100%; box-sizing: border-box; }
+  .contact-main { grid-template-columns: 1fr; padding-bottom: 90px !important; width: 100%; box-sizing: border-box; }
+  .contact-form { width: 100%; box-sizing: border-box; }
+  .contact-form__row { grid-template-columns: 1fr; gap: 24px; width: 100%; box-sizing: border-box; }
+  .contact-form__field { width: 100%; box-sizing: border-box; }
+  .contact-form__input { width: 100%; box-sizing: border-box; }
+  .contact-calendar__box { padding: 24px; width: 100%; box-sizing: border-box; }
   .contact-whatsapp-fab {
     display: flex;
+    bottom: 16px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+  }
+  .contact-whatsapp-fab .material-symbols-outlined {
+    font-size: 24px;
   }
 }
 @media (max-width: 480px) {

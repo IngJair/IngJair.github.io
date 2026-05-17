@@ -102,6 +102,8 @@ export default function Home() {
       <section 
         className="hero"
         style={{
+          '--hero-bg-pos-desktop': content.hero?.imagePosition || 'center center',
+          '--hero-bg-pos-mobile': content.hero?.mobileImagePosition || 'center center',
           position: 'relative',
           minHeight: '100svh',
           display: 'flex',
@@ -114,7 +116,16 @@ export default function Home() {
           <motion.img
             src={content.hero.backgroundImage || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCe3pG-Sv4PNYhFAnOjHMHuoLJM2ficfHU6lZJJfaYVySmqq1K5kn8wQ66yVm7kVJMBW1QHFk5z6h73PMaYLW5wnXB9c5_W-jh8ue4g_fBIqG5JhQmGgTLqb43N3tCidq71fvG5g4g9o2lYRXzBhOvZAkTCKGV56S-1rW7jkZHxR40bgEU5B2ZgNlWt2l0DK8kuvPrOJWt0wR5QUSCnLdVtTKPHH_U9HO4o3oJx2_Cxlq0YuNH6gRVUMsVcBCnA4B4wBqm7fsBsZM'}
             alt="Cinematic Wedding Moment"
-            className="hero__img"
+            className="hero__img hero__img--desktop"
+            initial={{ scale: 1.08 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 2.5, ease: "easeOut" }}
+            style={{ y: heroImageY }}
+          />
+          <motion.img
+            src={content.hero.mobileBackgroundImage || content.hero.backgroundImage || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCe3pG-Sv4PNYhFAnOjHMHuoLJM2ficfHU6lZJJfaYVySmqq1K5kn8wQ66yVm7kVJMBW1QHFk5z6h73PMaYLW5wnXB9c5_W-jh8ue4g_fBIqG5JhQmGgTLqb43N3tCidq71fvG5g4g9o2lYRXzBhOvZAkTCKGV56S-1rW7jkZHxR40bgEU5B2ZgNlWt2l0DK8kuvPrOJWt0wR5QUSCnLdVtTKPHH_U9HO4o3oJx2_Cxlq0YuNH6gRVUMsVcBCnA4B4wBqm7fsBsZM'}
+            alt="Cinematic Wedding Moment Mobile"
+            className="hero__img hero__img--mobile"
             initial={{ scale: 1.08 }}
             animate={{ scale: 1 }}
             transition={{ duration: 2.5, ease: "easeOut" }}

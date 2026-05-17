@@ -42,7 +42,7 @@ export function HomePromoPopup() {
   const promos = content.promos?.homePopup;
   if (!promos) return null;
   
-  const activeCards = (promos.cards || []).filter(c => c.active);
+  const activeCards = (promos.cards || []).filter(c => c.active && c.showOnHomePopup !== false);
 
   useEffect(() => {
     if (!promos?.enabled || activeCards.length === 0) {
@@ -64,14 +64,15 @@ export function HomePromoPopup() {
     return () => clearTimeout(timer);
   }, [promos?.enabled, promos?.delaySeconds, promos?.frequency]);
 
-  // Mezclar cards aleatoriamente al montar
+  // Mezclar cards aleatoriamente al montar y limitar a maxDisplayed
   const [shuffledCards] = useState(() => {
     const cards = [...activeCards];
     for (let i = cards.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [cards[i], cards[j]] = [cards[j], cards[i]];
     }
-    return cards;
+    const max = promos.maxDisplayed || 4;
+    return cards.slice(0, max);
   });
 
   const handleClose = () => setVisible(false);
@@ -117,8 +118,14 @@ export function HomePromoPopup() {
               </button>
             </div>
 
-            {/* Grid de 4 cards — o carrusel en mobile */}
-            <div className="promo-cards-grid">
+            {/* Grid de cards dinámico */}
+            <div 
+              className="promo-cards-grid"
+              style={{
+                '--card-count': shuffledCards.length,
+                gridTemplateColumns: `repeat(auto-fit, minmax(min(100% / ${Math.max(1, shuffledCards.length)}, 240px), 1fr))`
+              }}
+            >
               {shuffledCards.map((card, i) => (
                 <motion.div
                   key={card.id}

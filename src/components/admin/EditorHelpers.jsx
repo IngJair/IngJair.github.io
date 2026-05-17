@@ -60,7 +60,7 @@ export function EditableText({ tag: Tag = 'div', value, onChange, isEditing, sty
   );
 }
 
-export function EditableImage({ src, alt, onChange, isEditing, className = '', style = {}, folder = 'imagenes' }) {
+export function EditableImage({ src, alt, onChange, isEditing, className = '', style = {}, folder = 'imagenes', label = 'Reemplazar Imagen' }) {
   const fileInputRef = useRef(null);
   const { uploadFile, uploading } = useStorageUpload();
 
@@ -81,7 +81,7 @@ export function EditableImage({ src, alt, onChange, isEditing, className = '', s
           <span className="material-symbols-outlined" style={{ animation: uploading ? 'spin 1s linear infinite' : 'none' }}>
             {uploading ? 'sync' : 'add_photo_alternate'}
           </span>
-          <span>{uploading ? 'Subiendo...' : 'Reemplazar Imagen'}</span>
+          <span style={{ textAlign: 'center', padding: '0 8px' }}>{uploading ? 'Subiendo...' : label}</span>
           <input
             ref={fileInputRef}
             type="file"

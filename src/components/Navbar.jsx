@@ -85,8 +85,8 @@ export default function Navbar() {
             ))}
             <NavLink
               to="/contact"
-              className="btn-primary"
-              style={{ marginTop: 16, width: '100%', textAlign: 'center' }}
+              className="btn-primary navbar__mobile-cta"
+              style={{ marginTop: 16, width: '100%', textAlign: 'center', boxSizing: 'border-box' }}
               onClick={() => setMenuOpen(false)}
             >
               Reservar

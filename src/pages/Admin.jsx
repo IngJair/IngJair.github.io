@@ -247,7 +247,7 @@ export default function Admin() {
 
   return (
     <div className="admin-inline">
-      {/* BARRA FLOTANTE SUPERIOR — pequeña, no invasiva */}
+      {/* BARRA FLOTANTE SUPERIOR */}
       <div className="admin-topbar">
         <div className="admin-topbar__left">
           <span className="material-symbols-outlined admin-topbar__icon">edit_square</span>
@@ -263,8 +263,8 @@ export default function Admin() {
           )}
         </div>
 
-        {/* TABS DE PÁGINAS — centrados */}
-        <nav className="admin-topbar__tabs">
+        {/* TABS DE PÁGINAS DESKTOP */}
+        <nav className="admin-topbar__tabs admin-topbar__tabs--desktop">
           {EDITOR_TABS.map(tab => (
             <button
               key={tab.id}
@@ -280,14 +280,29 @@ export default function Admin() {
           ))}
         </nav>
 
+        {/* SELECT DE PÁGINAS MOBILE */}
+        <div className="admin-topbar__mobile-select-wrap">
+          <select 
+            className="admin-topbar__mobile-select"
+            value={activePage} 
+            onChange={e => setActivePage(e.target.value)}
+          >
+            {EDITOR_TABS.map(tab => (
+              <option key={tab.id} value={tab.id}>
+                {tab.label} {tab.id === 'reviews' && pendingCount > 0 ? `(${pendingCount})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="admin-topbar__right">
           <button className="admin-topbar__btn admin-topbar__btn--ghost" onClick={reset} title="Restaurar original">
             <span className="material-symbols-outlined">restart_alt</span>
-            <span>Reset</span>
+            <span className="admin-topbar__btn-label">Reset</span>
           </button>
-          <a href="/" target="_blank" rel="noopener noreferrer" className="admin-topbar__btn admin-topbar__btn--ghost">
+          <a href="/" target="_blank" rel="noopener noreferrer" className="admin-topbar__btn admin-topbar__btn--ghost" title="Ver sitio web">
             <span className="material-symbols-outlined">open_in_new</span>
-            <span>Ver sitio</span>
+            <span className="admin-topbar__btn-label">Ver sitio</span>
           </a>
           <button
             className={`admin-topbar__btn admin-topbar__btn--save ${hasUnsaved && !isSaving ? 'admin-topbar__btn--pulse' : ''}`}
@@ -298,31 +313,25 @@ export default function Admin() {
             <span className="material-symbols-outlined">
               {isSaving ? 'sync' : (hasUnsaved ? 'save' : 'check_circle')}
             </span>
-            <span>
-              {isSaving ? 'Guardando...' : (hasUnsaved ? 'Guardar Cambios' : 'Guardado')}
+            <span className="admin-topbar__btn-label">
+              {isSaving ? 'Guardando...' : (hasUnsaved ? 'Guardar' : 'Guardado')}
             </span>
           </button>
           <button
+            className="admin-topbar__btn-logout"
             onClick={handleLogout}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '8px 16px',
-              background: '#fff',
-              border: '1px solid #e0e0e0',
-              borderRadius: 8,
-              cursor: 'pointer',
-              fontSize: 13,
-              fontWeight: 600,
-              color: '#555',
-              marginLeft: 8
-            }}
+            title="Cerrar sesión"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>logout</span>
-            Cerrar sesión
+            <span className="material-symbols-outlined">logout</span>
+            <span className="admin-topbar__btn-label">Salir</span>
           </button>
         </div>
+      </div>
+
+      {/* AVISO MÓVIL */}
+      <div className="admin-mobile-warning">
+        <span className="material-symbols-outlined">info</span>
+        <span>Para una mejor experiencia de edición, usa una tablet o computadora.</span>
       </div>
 
       {/* TOAST DE GUARDADO */}

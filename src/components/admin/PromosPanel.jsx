@@ -156,6 +156,25 @@ export default function PromosPanel() {
               </div>
             </div>
 
+            <div style={{ width: 1, height: 60, background: '#222' }} />
+
+            {/* Cantidad de anuncios a mostrar aleatoriamente */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <span style={{ fontSize: 11, color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>format_list_numbered</span>
+                Cant. Anuncios (Aleatorio)
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="range" min={1} max={10} step={1}
+                  value={homePopup.maxDisplayed || 4}
+                  onChange={e => update('promos.homePopup.maxDisplayed', Number(e.target.value))}
+                  style={{ width: 100, accentColor: '#bf953f' }} />
+                <span style={{ fontSize: 18, fontWeight: 900, color: '#bf953f', minWidth: 40, textAlign: 'center' }}>
+                  {homePopup.maxDisplayed || 4}
+                </span>
+              </div>
+            </div>
+
             <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div>
                 <label style={{ fontSize: 11, color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 4 }}>Título del popup</label>
@@ -289,6 +308,25 @@ export default function PromosPanel() {
 
                       {/* SECCIÓN INFO BÁSICA */}
                       <div style={{ padding: '20px 24px', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, padding: '12px 16px', background: '#fef9ee', border: '1px solid #e8d9b5', borderRadius: 8 }}>
+                          <span className="material-symbols-outlined" style={{ color: '#bf953f', fontSize: 20 }}>campaign</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#333' }}>¿Mostrar en Popup de Inicio?</span>
+                          <button
+                            onClick={() => updateCard(i, 'showOnHomePopup', card.showOnHomePopup === false ? true : false)}
+                            style={{
+                              marginLeft: 'auto', width: 52, height: 28, borderRadius: 14,
+                              background: card.showOnHomePopup !== false ? '#bf953f' : '#ccc',
+                              border: 'none', cursor: 'pointer', position: 'relative',
+                            }}
+                          >
+                            <motion.div animate={{ x: card.showOnHomePopup !== false ? 26 : 2 }} transition={{ duration: 0.15 }}
+                              style={{ position: 'absolute', top: 2, width: 24, height: 24, background: '#fff', borderRadius: '50%' }} />
+                          </button>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: card.showOnHomePopup !== false ? '#bf953f' : '#888' }}>
+                            {card.showOnHomePopup !== false ? 'SÍ' : 'NO'}
+                          </span>
+                        </div>
+
                         <p style={{ fontSize: 11, fontWeight: 700, color: '#0a0a0a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
                           <span className="material-symbols-outlined" style={{ fontSize: 15, color: '#bf953f' }}>info</span>
                           Información básica
