@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useSiteContent } from '../../context/SiteContentContext';
-import { AdminSection, AdminField } from './AdminField';
+import { useSiteContent } from '../../context/useSiteContent';
+import { AdminSection } from './AdminField';
 
 export default function CalendarPanel() {
   const { content, updateContent } = useSiteContent();

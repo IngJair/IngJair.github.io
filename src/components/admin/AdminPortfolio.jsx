@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
-import { useSiteContent } from '../../context/SiteContentContext';
-import { EditableSection, EditableText, EditableImage, StyleMiniToolbar } from './EditorHelpers';
+import { useSiteContent } from '../../context/useSiteContent';
+import { EditableSection, EditableText, StyleMiniToolbar } from './EditorHelpers';
 
 export default function AdminPortfolio() {
   const { content, update } = useSiteContent();
@@ -409,10 +409,6 @@ function GalleryEditor({ events, categories, years, onUpdate }) {
   const [modalYear, setModalYear] = useState(years[0] || '2024');
   const [modalCover, setModalCover] = useState('');
 
-  useEffect(() => {
-    setModalCat(activeCategory);
-  }, [activeCategory]);
-
   const categoryEvents = events.filter(e => e.category === activeCategory);
 
   const handleCreateEvent = () => {
@@ -448,7 +444,7 @@ function GalleryEditor({ events, categories, years, onUpdate }) {
           const count = events.filter(e => e.category === cat).length;
           const isActive = cat === activeCategory;
           return (
-            <button key={cat} onClick={() => { setActiveCategory(cat); setSelectedId(null); }}
+            <button key={cat} onClick={() => { setActiveCategory(cat); setModalCat(cat); setSelectedId(null); }}
               style={{
                 flexShrink: 0,
                 display: 'flex', alignItems: 'center', gap: 6,

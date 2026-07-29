@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageTransition from '../components/PageTransition';
 import InteractiveMap from '../components/InteractiveMap';
-import { useSiteContent } from '../context/SiteContentContext';
+import { useSiteContent } from '../context/useSiteContent';
 import { EVENT_TYPES } from '../config';
 import './Contact.css';
 
@@ -161,7 +161,7 @@ export default function Contact() {
       };
 
       try {
-        await supabase.from('contact_requests').insert([{
+        const { error: requestError } = await supabase.from('contact_requests').insert([{
           client_name: reservationRequest.clientName,
           email: reservationRequest.email,
           phone: reservationRequest.phone,
@@ -173,7 +173,8 @@ export default function Contact() {
           day: reservationRequest.day,
           status: 'pending',
         }]);
-      } catch (e) {
+        if (requestError) throw requestError;
+      } catch {
         // Fallback silencioso: guardar en localStorage para que el admin pueda verlo
         const existing = JSON.parse(localStorage.getItem('luxe_reservation_requests') || '[]');
         existing.push(reservationRequest);

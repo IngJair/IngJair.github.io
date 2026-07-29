@@ -1,17 +1,20 @@
 import { useEffect, useRef } from 'react';
 
+const LIMA_CENTER = [-12.0464, -77.0428];
+
 export default function InteractiveMap({ 
   mode = 'zones', 
   zones = [], 
   interactive = false, 
   onMapClick, 
   onZoneMove,
-  defaultCenter = [-12.0464, -77.0428], // Lima por defecto
+  defaultCenter = LIMA_CENTER, // Lima por defecto
   defaultZoom = 11
 }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const zonesLayerRef = useRef(null);
+  const [centerLat, centerLng] = defaultCenter;
 
   // 1. Inicialización del Mapa
   useEffect(() => {
@@ -30,7 +33,7 @@ export default function InteractiveMap({
 
     // Crear instancia del mapa
     const map = L.map(mapContainerRef.current, {
-      center: defaultCenter,
+      center: [centerLat, centerLng],
       zoom: defaultZoom,
       zoomControl: true,
       scrollWheelZoom: false,
@@ -44,13 +47,6 @@ export default function InteractiveMap({
     // Grupo de capas para zonas
     zonesLayerRef.current = L.featureGroup().addTo(map);
 
-    if (interactive && mode === 'zones' && onMapClick) {
-      map.on('click', (e) => {
-        const { lat, lng } = e.latlng;
-        onMapClick({ lat, lng });
-      });
-    }
-
     mapInstanceRef.current = map;
 
     return () => {
@@ -59,7 +55,21 @@ export default function InteractiveMap({
         mapInstanceRef.current = null;
       }
     };
-  }, []); // Solo al montar
+  }, [centerLat, centerLng, defaultZoom]);
+
+  // Mantener el evento de clic sincronizado sin recrear el mapa.
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !interactive || mode !== 'zones' || !onMapClick) return;
+
+    const handleClick = (event) => {
+      const { lat, lng } = event.latlng;
+      onMapClick({ lat, lng });
+    };
+
+    map.on('click', handleClick);
+    return () => map.off('click', handleClick);
+  }, [interactive, mode, onMapClick]);
 
   // 2. Actualización de Zonas
   useEffect(() => {
@@ -109,14 +119,14 @@ export default function InteractiveMap({
 
       // Solo ajustar vista si no estamos en modo interactivo o es la primera carga con zonas
       if (!interactive || layerGroup.getLayers().length > 0) {
-        try {
+        if (bounds.isValid()) {
           map.fitBounds(bounds, { padding: [40, 40] });
-        } catch (e) {}
+        }
       }
     } else {
-      map.setView(defaultCenter, defaultZoom);
+      map.setView([centerLat, centerLng], defaultZoom);
     }
-  }, [JSON.stringify(zones), mode, interactive]);
+  }, [zones, mode, interactive, onZoneMove, centerLat, centerLng, defaultZoom]);
 
   // 3. Soporte Modo "single"
   useEffect(() => {
@@ -127,9 +137,9 @@ export default function InteractiveMap({
     // Limpiar zonas si las había
     if (zonesLayerRef.current) zonesLayerRef.current.clearLayers();
     
-    L.marker(defaultCenter).addTo(map);
-    map.setView(defaultCenter, 14);
-  }, [mode, defaultCenter]);
+    L.marker([centerLat, centerLng]).addTo(map);
+    map.setView([centerLat, centerLng], 14);
+  }, [mode, centerLat, centerLng]);
 
   return (
     <div 

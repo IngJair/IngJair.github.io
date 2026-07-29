@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useSiteContent } from '../../context/SiteContentContext';
+import { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import { useSiteContent } from '../../context/useSiteContent';
 
 export default function ReviewsPanel() {
   const { content, update, publishReview, rejectReview, deletePublishedReview, toggleFeaturedReview, getPendingReviews } = useSiteContent();
@@ -9,7 +9,7 @@ export default function ReviewsPanel() {
   const [editingReview, setEditingReview] = useState(null);
   const [editText, setEditText] = useState('');
 
-  const fetchPending = async () => {
+  const fetchPending = useCallback(async () => {
     try {
       const data = await getPendingReviews();
       setPendingReviews(Array.isArray(data) ? data : []);
@@ -17,11 +17,24 @@ export default function ReviewsPanel() {
       console.error('[ReviewsPanel] Error fetching pending reviews:', e);
       setPendingReviews([]);
     }
-  };
+  }, [getPendingReviews]);
 
   useEffect(() => {
-    fetchPending();
-  }, []);
+    let active = true;
+
+    getPendingReviews()
+      .then(data => {
+        if (active) setPendingReviews(Array.isArray(data) ? data : []);
+      })
+      .catch(error => {
+        console.error('[ReviewsPanel] Error fetching pending reviews:', error);
+        if (active) setPendingReviews([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [getPendingReviews]);
 
   const handlePublish = async (review) => {
     try {

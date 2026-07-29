@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { motion } from 'framer-motion';
-import { useSiteContent } from '../../context/SiteContentContext';
+import { useSiteContent } from '../../context/useSiteContent';
 import { EditableSection } from './EditorHelpers';
 import InteractiveMap from '../InteractiveMap';
 
@@ -99,7 +99,7 @@ export default function AdminContact() {
       } else {
         setGeoError("No se encontró ese lugar. Intenta con el nombre completo del distrito.");
       }
-    } catch (e) {
+    } catch {
       setGeoError("Error al buscar la ubicación.");
     } finally {
       setIsGeocoding(false);

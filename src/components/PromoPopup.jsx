@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useSiteContent } from '../context/SiteContentContext';
+import { useSiteContent } from '../context/useSiteContent';
 import { buildWhatsappLink } from '../utils/whatsappMessage';
 import './PromoPopup.css';
 
@@ -75,10 +75,9 @@ export function HomePromoPopup() {
     const selected = cards.slice(0, max);
     console.log("Popup selected ads:", selected);
 
-    setShuffledCards(selected);
-
     const delay = (promos.delaySeconds || 2) * 1000;
     const timer = setTimeout(() => {
+      setShuffledCards(selected);
       setVisible(true);
       markPopupShown('home');
       console.log("Popup shown");
@@ -311,11 +310,9 @@ Podrias darme mas informacion?`
       return;
     }
 
-    // Limpiar timers anteriores
+    // Limpiar timers anteriores. El componente se remonta al cambiar de categoría.
     clearTimeout(timerRef.current);
     clearInterval(countdownRef.current);
-    setVisible(false);
-    setCountdown(null);
 
     const totalDelay = (promos.delaySeconds || 60) * 1000;
     const countdownStart = promos.countdownSeconds || 10;
@@ -343,7 +340,7 @@ Podrias darme mas informacion?`
       clearTimeout(timerRef.current);
       clearInterval(countdownRef.current);
     };
-  }, [activeCategory, promos?.enabled, promos?.delaySeconds, promos?.countdownSeconds]);
+  }, [activeCategory, loadingContent, promos]);
 
   const handleClose = () => {
     setVisible(false);

@@ -1,16 +1,42 @@
-# React + Vite
+# Elky Studios
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sitio web y panel de administración de Elky Studios, construido con React, Vite y Supabase.
 
-Currently, two official plugins are available:
+## Desarrollo local
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Instala las dependencias con `npm install`.
+2. Configura `.env` con la URL y la clave publicable del proyecto de Supabase.
+3. Inicia el proyecto con `npm run dev`.
 
-## React Compiler
+## Supabase
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+El proyecto usa:
 
-## Expanding the ESLint configuration
+- `site_content` para el contenido editable del sitio.
+- `pending_reviews` para las reseñas enviadas por visitantes.
+- `contact_requests` para las solicitudes de reserva.
+- El bucket público `elky-studios` para imágenes y videos.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+[`supabase/security.sql`](./supabase/security.sql) crea las tablas, índices, bucket, permisos y políticas RLS. Es idempotente y puede volver a ejecutarse desde el SQL Editor.
+
+## Acceso administrativo
+
+El panel `/admin` usa Supabase Auth; no contiene una contraseña administrativa en el código.
+
+El registro público está desactivado. Para habilitar a un administrador:
+
+1. Abre **Authentication → Users** en Supabase.
+2. Selecciona **Add user → Send invitation**.
+3. Invita el correo que administrará el sitio.
+4. El enlace abre `/admin?setup=1`, donde el usuario crea su contraseña.
+5. Después puede entrar normalmente en `/admin` con su correo y contraseña.
+
+En desarrollo local, Vite usa `http://localhost:3000`. Configura esa misma URL en **Authentication → URL Configuration** o reemplázala por el dominio público cuando el sitio sea desplegado.
+
+## Validación
+
+```bash
+npm run lint
+npm run build
+npm audit
+```

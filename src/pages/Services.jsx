@@ -1,56 +1,81 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSiteContent } from '../context/SiteContentContext';
+import { useSiteContent } from '../context/useSiteContent';
 import PageTransition from '../components/PageTransition';
 import ScrollReveal from '../components/ScrollReveal';
-import { FAQ_ITEMS, TESTIMONIALS } from '../data/servicesData';
+import { FAQ_ITEMS } from '../data/servicesData';
 import ReviewForm from '../components/ReviewForm';
 import { buildWhatsappLink } from '../utils/whatsappMessage';
 import './Services.css';
 
 const DEFAULT_IMAGES = {
-  basic: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD2t4xcwuTL3c_3Y5uxW-rEXOHEKtIN9eNpPBcfXFFanxrl4qzT1YQgHfzUT8eo-kJfljZ1SZkWxcksfucR4rbm-cG5J5mlHJ-2T4qMQViLE8ycFw03_s1vCNczHGUKhy0zomH1-G0cvm8ggRsvt6z3zwlLtWnv9u4d3yJ6tOsoLulZXOmrmVtFVYpJ2HkaUqdsLs_oCBN4MQVmSvMM4iF2rBD3zOwm7Vqn_hZUbgO-IidzWSLFNMxq1LFmSQNU-jUKpXs6_2s5YFhC',
-  premium: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBLy4aIV8Le0gSUxfC0s3Tr-oDs5lbEeqmrick6fMQB7B9P3ziuHic5uNFZxMTtQwPMc2HFNDsZSBEv_U54s4mSsoDecOpduNKBKwpGWqd1RGxI8Mq_axaZv_r2FnEgmItqZhHxWs-y0TSp7xI6u0CeQVGO_O5nTKA-lyEYHzoDZnTf-4TDlYL1BeGXbfFTFAZf97bXG9QP_j13DEJEpxOI-AdZuvdfKDmsnzVSnGVf68lhrqv4y0iQorGhy_K3g2ybNdq-k3iTbSQ1',
-  full: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCnbYLliOfIjwQ0MEQfNnFphC9LU8pT4EaqceP6h92xvpymYD1b5DD6beRH5zH2JFS2ancOPIc0VJ7E0cHuvl-MWxRb4Rp3ZFH244-ZvT6ULXfP4Ttghct6ihTJJFtWWJ0PUDqgNlpY3RKbAmTTqe5D5ZYEHAk1czYaxh_O5iBvgkCFX4C2VhRxMw-42aap4-EtjJTtFlggYBzXEkuGuZLJzdXUaBecDM6ULqNzsquzHvSy-UCbwHXGo',
+  basic: '/imagenes/4457575698e39f2bc156fc256b379a32.jpg',
+  premium: '/imagenes/0251b313ceb3739fbf9d976e79a50ab4.jpg',
+  full: '/imagenes/4414f74c682d85f3f4f9bac2b972564b.jpg',
+};
+
+const SERVICE_FALLBACKS = Object.values(DEFAULT_IMAGES);
+
+const replaceBrokenImage = (event, fallback) => {
+  event.currentTarget.onerror = null;
+  event.currentTarget.src = fallback;
 };
 
 export default function Services() {
   const { content } = useSiteContent();
-  const [searchParams] = useSearchParams();
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [searchParams, setSearchParams] = useSearchParams();
   const [openFaq, setOpenFaq] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
 
   const servicesContent = content.services || {};
-  const basePackages = servicesContent.basePackages || [];
-  const categoryOverrides = servicesContent.categoryOverrides || {};
+  const basePackages = useMemo(
+    () => servicesContent.basePackages || [],
+    [servicesContent.basePackages]
+  );
+  const categoryOverrides = useMemo(
+    () => servicesContent.categoryOverrides || {},
+    [servicesContent.categoryOverrides]
+  );
 
   const template = content.contact?.whatsappMessageTemplate || '';
   const whatsappNumber = content.contact?.whatsapp || '';
   const negocioName = content.brand?.name || '';
 
   // Categorías sincronizadas con portafolio (excluye "Todos")
-  const portfolioCategories = (content.portfolio?.categories || []).filter(c => c !== 'Todos');
+  const portfolioCategories = useMemo(
+    () => (content.portfolio?.categories || []).filter(category => category !== 'Todos'),
+    [content.portfolio?.categories]
+  );
 
   // Tabs de categorías: "Todos" + las del portafolio activas en servicios
-  const serviceTabs = [
-    { id: 'all', label: 'Todos los Eventos', icon: 'photo_camera', multiplier: 1 },
-    ...portfolioCategories.map(cat => ({
-      id: cat,
-      label: cat,
-      icon: getCategoryIcon(cat),
-      multiplier: categoryOverrides[cat]?.multiplier || 1,
-      note: categoryOverrides[cat]?.note || '',
-      active: categoryOverrides[cat]?.active !== false,
-    })).filter(t => t.active),
-  ];
+  const serviceTabs = useMemo(() => [
+      { id: 'all', label: 'Todos los Eventos', icon: 'photo_camera', multiplier: 1 },
+      ...portfolioCategories.map(cat => ({
+        id: cat,
+        label: cat,
+        icon: getCategoryIcon(cat),
+        multiplier: categoryOverrides[cat]?.multiplier || 1,
+        note: categoryOverrides[cat]?.note || '',
+        active: categoryOverrides[cat]?.active !== false,
+      })).filter(tab => tab.active),
+    ], [categoryOverrides, portfolioCategories]);
 
-  // Leer query param
-  useEffect(() => {
-    const tipo = searchParams.get('tipo');
-    if (tipo && serviceTabs.find(t => t.id === tipo)) setActiveCategory(tipo);
-  }, [searchParams, serviceTabs]);
+  const [activeCategory, setActiveCategory] = useState(() => {
+    const requestedType = searchParams.get('tipo');
+    return requestedType && serviceTabs.some(tab => tab.id === requestedType)
+      ? requestedType
+      : 'all';
+  });
+
+  const handleCategoryChange = (category) => {
+    setActiveCategory(category);
+    if (searchParams.has('tipo')) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('tipo');
+      setSearchParams(nextParams, { replace: true });
+    }
+  };
 
   const currentTab = serviceTabs.find(t => t.id === activeCategory) || serviceTabs[0];
   const override = activeCategory !== 'all' ? categoryOverrides[activeCategory] : null;
@@ -156,7 +181,7 @@ export default function Services() {
     }))
 
     return [...basePkgs, ...extraPkgs]
-  }, [activeCategory, basePackages, categoryOverrides, currentTab, portfolioCategories]);
+  }, [activeCategory, basePackages, categoryOverrides, currentTab, override?.extraPackages, override?.packageOverrides, portfolioCategories]);
 
   return (
     <PageTransition>
@@ -217,7 +242,7 @@ export default function Services() {
                 <motion.button
                   key={tab.id}
                   className={`svc-cat-tab ${activeCategory === tab.id ? 'svc-cat-tab--active' : ''}`}
-                  onClick={() => setActiveCategory(tab.id)}
+                  onClick={() => handleCategoryChange(tab.id)}
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.97 }}
                 >
@@ -282,6 +307,7 @@ export default function Services() {
 
                   <div className="svc-pkg__img-wrap">
                     <img src={pkg.image || DEFAULT_IMAGES[pkg.id] || DEFAULT_IMAGES.basic}
+                      onError={event => replaceBrokenImage(event, SERVICE_FALLBACKS[i % SERVICE_FALLBACKS.length])}
                       alt={pkg.title} className="svc-pkg__img" />
                   </div>
 
@@ -385,7 +411,12 @@ export default function Services() {
                     </div>
                     <p className="text-body-md svc-testimonial__text">"{t.text}"</p>
                     <div className="svc-testimonial__footer">
-                      <img src={t.photo || 'https://via.placeholder.com/150'} alt={t.name} className="svc-testimonial__avatar" />
+                      <img
+                        src={t.photo || '/logo-perfect.png'}
+                        onError={event => replaceBrokenImage(event, '/logo-perfect.png')}
+                        alt={t.name}
+                        className="svc-testimonial__avatar"
+                      />
                       <div>
                         <p className="text-label-sm svc-testimonial__name">{t.name}</p>
                         <p className="svc-testimonial__event">{t.event}</p>

@@ -1,27 +1,19 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useSiteContent } from '../../context/SiteContentContext';
+import { useState } from 'react';
+import { useSiteContent } from '../../context/useSiteContent';
 import { EditableSection, EditableText, EditableImage, EditableLink, StyleMiniToolbar } from './EditorHelpers';
+
+const getDestinationType = (destination = '') => {
+  if (destination.startsWith('/portfolio')) return 'portfolio';
+  if (destination.startsWith('/services')) return 'services';
+  return null;
+};
 
 function ServiceCardEditor({ item, index, isEditing, onUpdate }) {
   const { content } = useSiteContent();
   const [showLinkConfig, setShowLinkConfig] = useState(false);
-  const [showSubPanel, setShowSubPanel] = useState(false);
-  const [subPanelType, setSubPanelType] = useState(null);
-
-  // Detectar tipo de destino actual al montar o cambiar item
-  useEffect(() => {
-    if (item.linkDestination?.startsWith('/portfolio')) {
-      setSubPanelType('portfolio');
-      setShowSubPanel(true);
-    } else if (item.linkDestination?.startsWith('/services')) {
-      setSubPanelType('services');
-      setShowSubPanel(true);
-    } else {
-      setSubPanelType(null);
-      setShowSubPanel(false);
-    }
-  }, []);
+  const initialDestinationType = getDestinationType(item.linkDestination);
+  const [showSubPanel, setShowSubPanel] = useState(Boolean(initialDestinationType));
+  const [subPanelType, setSubPanelType] = useState(initialDestinationType);
 
   const portfolioCategories = (content.portfolio?.categories || [
     'Bodas', 'Quinceañeros', 'Fiestas Infantiles',
@@ -134,7 +126,7 @@ function ServiceCardEditor({ item, index, isEditing, onUpdate }) {
                 suppressContentEditableWarning
                 className="editable-text--active"
                 style={{
-                  fontSize: '12px', fontWeight: 700,
+                  fontSize: '12px',
                   letterSpacing: '0.08em', textTransform: 'uppercase',
                   color: item.linkStyle?.color || '#0a0a0a',
                   fontWeight: item.linkStyle?.bold ? 900 : 700,

@@ -1,10 +1,10 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageTransition from '../components/PageTransition';
 import ScrollReveal from '../components/ScrollReveal';
 import { portfolioItems as staticEvents, CATEGORIES as staticCategories, YEARS as staticYears } from '../data/portfolioData';
-import { useSiteContent } from '../context/SiteContentContext';
+import { useSiteContent } from '../context/useSiteContent';
 import { PortfolioPromoPopup } from '../components/PromoPopup';
 import './Portfolio.css';
 
@@ -21,18 +21,23 @@ export default function Portfolio() {
   const { content } = useSiteContent();
   const portfolioContent = content.portfolio || {};
   
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState('Todos');
+  const [activeCategory, setActiveCategory] = useState(
+    () => searchParams.get('categoria') || searchParams.get('tipo') || 'Todos'
+  );
   const [activeYear, setActiveYear] = useState('Todos');
   const [searchFocused, setSearchFocused] = useState(false);
-  const [searchParams] = useSearchParams();
 
-  useEffect(() => {
-    const categoria = searchParams.get('categoria');
-    const tipo = searchParams.get('tipo');
-    if (categoria) setActiveCategory(categoria);
-    if (tipo) setActiveCategory(tipo);
-  }, [searchParams]);
+  const handleCategoryChange = (category) => {
+    setActiveCategory(category);
+    if (searchParams.has('categoria') || searchParams.has('tipo')) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('categoria');
+      nextParams.delete('tipo');
+      setSearchParams(nextParams, { replace: true });
+    }
+  };
 
   // Fusionar eventos estáticos con los del contexto
   const allEvents = useMemo(() => {
@@ -143,7 +148,7 @@ export default function Portfolio() {
                   <motion.button
                     key={cat}
                     className={`port-chip ${activeCategory === cat ? 'port-chip--active' : ''}`}
-                    onClick={() => setActiveCategory(cat)}
+                    onClick={() => handleCategoryChange(cat)}
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                   >
@@ -212,7 +217,7 @@ export default function Portfolio() {
                 <p className="text-body-md">Intenta con otras palabras o limpia los filtros.</p>
                 <button
                   className="btn-outline"
-                  onClick={() => { setSearchQuery(''); setActiveCategory('Todos'); setActiveYear('Todos'); }}
+                  onClick={() => { setSearchQuery(''); handleCategoryChange('Todos'); setActiveYear('Todos'); }}
                 >
                   Limpiar filtros
                 </button>
@@ -295,7 +300,7 @@ export default function Portfolio() {
         </ScrollReveal>
       </section>
 
-      <PortfolioPromoPopup activeCategory={activeCategory} />
+      <PortfolioPromoPopup key={activeCategory} activeCategory={activeCategory} />
     </PageTransition>
   );
 }

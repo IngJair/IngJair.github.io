@@ -1,5 +1,5 @@
 import { NavLink, Link } from 'react-router-dom';
-import { useSiteContent } from '../context/SiteContentContext';
+import { useSiteContent } from '../context/useSiteContent';
 import './Footer.css';
 
 export default function Footer() {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSiteContent, ADMIN_PASSWORD } from '../context/SiteContentContext';
+import { useSiteContent } from '../context/useSiteContent';
 import { supabase } from '../lib/supabase';
 
 // Páginas del editor inline
@@ -11,7 +11,6 @@ import AdminContact from '../components/admin/AdminContact';
 import ReviewsPanel from '../components/admin/ReviewsPanel';
 import PromosPanel from '../components/admin/PromosPanel';
 
-import { EditableSection, EditableText, EditableImage, StyleMiniToolbar } from '../components/admin/EditorHelpers';
 import './Admin.css';
 
 const EDITOR_TABS = [
@@ -25,36 +24,136 @@ const EDITOR_TABS = [
 ];
 
 export default function Admin() {
-  const { hasUnsaved, save, reset, content, update } = useSiteContent();
+  const { hasUnsaved, save, reset } = useSiteContent();
   const [activePage, setActivePage] = useState('home');
   const [saveToast, setSaveToast] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [authenticatedEmail, setAuthenticatedEmail] = useState('');
+  const [error, setError] = useState(() => {
+    const authError = new URLSearchParams(window.location.hash.slice(1)).get('error_description');
+    return authError ? decodeURIComponent(authError.replace(/\+/g, ' ')) : '';
+  });
+  const [notice, setNotice] = useState('');
+  const [isPasswordSetup, setIsPasswordSetup] = useState(
+    () => new URLSearchParams(window.location.search).get('setup') === '1'
+  );
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   useEffect(() => {
-    const auth = sessionStorage.getItem('luxe_admin_auth');
-    if (auth === 'true') setIsAuthenticated(true);
+    let active = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      setIsAuthenticated(Boolean(data.session));
+      setAuthenticatedEmail(data.session?.user?.email || '');
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active) return;
+      setIsAuthenticated(Boolean(session));
+      setAuthenticatedEmail(session?.user?.email || '');
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsPasswordSetup(true);
+      }
+    });
+
+    return () => {
+      active = false;
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
-  const handleLogin = () => {
-    if (btoa(passwordInput) === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('luxe_admin_auth', 'true');
-      setError('');
-    } else {
-      setError('Contraseña incorrecta');
+  const handleLogin = async (event) => {
+    event?.preventDefault();
+    if (!emailInput.trim() || !passwordInput) {
+      setError('Ingresa tu correo y contraseña.');
+      return;
+    }
+
+    setIsLoggingIn(true);
+    setError('');
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: emailInput.trim(),
+      password: passwordInput,
+    });
+    setIsLoggingIn(false);
+
+    if (authError) {
+      setError('No se pudo iniciar sesión. Verifica tus credenciales.');
       setPasswordInput('');
+    } else {
+      setError('');
     }
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    sessionStorage.removeItem('luxe_admin_auth');
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const handlePasswordRecoveryRequest = async () => {
+    const email = emailInput.trim();
+    if (!email) {
+      setError('Ingresa primero el correo administrativo.');
+      return;
+    }
+
+    setIsLoggingIn(true);
+    setError('');
+    setNotice('');
+    const redirectTo = `${window.location.origin}/admin?setup=1`;
+    const { error: recoveryError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    setIsLoggingIn(false);
+
+    if (recoveryError) {
+      setError('No se pudo enviar el enlace. Intenta nuevamente.');
+      return;
+    }
+
+    setNotice('Revisa el correo: enviamos un enlace seguro para establecer la contraseña.');
+  };
+
+  const handlePasswordSetup = async (event) => {
+    event.preventDefault();
+    setError('');
+    setNotice('');
+
+    if (newPasswordInput.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+
+    if (newPasswordInput !== confirmPasswordInput) {
+      setError('Las contraseñas no coinciden.');
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPasswordInput });
+    setIsUpdatingPassword(false);
+
+    if (updateError) {
+      setError('No se pudo guardar la contraseña. Solicita un enlace nuevo.');
+      return;
+    }
+
+    setNewPasswordInput('');
+    setConfirmPasswordInput('');
+    setNotice('Contraseña creada correctamente. Ya puedes administrar el sitio.');
+    setIsPasswordSetup(false);
+
+    const cleanUrl = new URL(window.location.href);
+    cleanUrl.searchParams.delete('setup');
+    cleanUrl.hash = '';
+    window.history.replaceState({}, '', `${cleanUrl.pathname}${cleanUrl.search}`);
   };
 
   const handleSave = async () => {
@@ -74,6 +173,8 @@ export default function Admin() {
   };
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     const checkPending = async () => {
       try {
         const { count } = await supabase
@@ -81,7 +182,7 @@ export default function Admin() {
           .select('*', { count: 'exact', head: true })
           .eq('status', 'pending');
         setPendingCount(count || 0);
-      } catch (_) {
+      } catch {
         // Fallback: localStorage
         const pending = JSON.parse(localStorage.getItem('luxe_pending_reviews') || '[]');
         setPendingCount(pending.length);
@@ -90,7 +191,7 @@ export default function Admin() {
     checkPending();
     const interval = setInterval(checkPending, 10000); // Poll cada 10s
     return () => clearInterval(interval);
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -102,6 +203,94 @@ export default function Admin() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsaved]);
+
+  if (isAuthenticated === null) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#0a0a0a', color: '#fff' }}>
+        Verificando acceso seguro…
+      </div>
+    );
+  }
+
+  if (isAuthenticated && isPasswordSetup) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)',
+        padding: 24
+      }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            background: '#fff',
+            borderRadius: 16,
+            padding: 40,
+            maxWidth: 420,
+            width: '100%',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+          }}
+        >
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <h1 style={{ fontSize: 28, fontFamily: 'Playfair Display, serif', color: '#0a0a0a', marginBottom: 8 }}>
+              Crea tu contraseña
+            </h1>
+            <p style={{ fontSize: 14, color: '#777', lineHeight: 1.5 }}>
+              Acceso para {authenticatedEmail}. Usa una contraseña de al menos 8 caracteres.
+            </p>
+          </div>
+
+          <form onSubmit={handlePasswordSetup}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>
+              Nueva contraseña
+            </label>
+            <input
+              type="password"
+              autoFocus
+              autoComplete="new-password"
+              value={newPasswordInput}
+              onChange={event => setNewPasswordInput(event.target.value)}
+              style={{ width: '100%', padding: '12px 14px', border: '2px solid #e0e0e0', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', marginBottom: 16 }}
+            />
+
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>
+              Confirmar contraseña
+            </label>
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={confirmPasswordInput}
+              onChange={event => setConfirmPasswordInput(event.target.value)}
+              style={{ width: '100%', padding: '12px 14px', border: '2px solid #e0e0e0', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', marginBottom: 16 }}
+            />
+
+            {error && <p style={{ fontSize: 12, color: '#e53935', marginBottom: 14 }}>{error}</p>}
+
+            <button
+              type="submit"
+              disabled={isUpdatingPassword}
+              style={{
+                width: '100%',
+                padding: 12,
+                background: '#0a0a0a',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: isUpdatingPassword ? 'wait' : 'pointer'
+              }}
+            >
+              {isUpdatingPassword ? 'Guardando…' : 'Guardar contraseña'}
+            </button>
+          </form>
+        </motion.div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
@@ -135,8 +324,39 @@ export default function Admin() {
               Panel de Administración
             </h1>
             <p style={{ fontSize: 14, color: '#888' }}>
-              Ingresa la contraseña para continuar
+              Ingresa con tu cuenta administrativa
             </p>
+          </div>
+
+          <form onSubmit={handleLogin}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#888',
+              textTransform: 'uppercase',
+              display: 'block',
+              marginBottom: 8
+            }}>
+              Correo electrónico
+            </label>
+            <input
+              type="email"
+              autoFocus
+              autoComplete="username"
+              value={emailInput}
+              onChange={event => setEmailInput(event.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 14px',
+                border: '2px solid #e0e0e0',
+                borderRadius: 8,
+                fontSize: 14,
+                boxSizing: 'border-box',
+                outline: 'none'
+              }}
+              placeholder="admin@ejemplo.com"
+            />
           </div>
 
           <div style={{ marginBottom: 20 }}>
@@ -153,10 +373,9 @@ export default function Admin() {
             <div style={{ position: 'relative' }}>
               <input
                 type={showPassword ? 'text' : 'password'}
-                autoFocus
+                autoComplete="current-password"
                 value={passwordInput}
                 onChange={e => setPasswordInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleLogin()}
                 style={{
                   width: '100%',
                   padding: '12px 45px 12px 14px',
@@ -170,7 +389,9 @@ export default function Admin() {
                 placeholder="Escribe tu contraseña"
               />
               <button
+                type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 style={{
                   position: 'absolute',
                   right: 8,
@@ -204,7 +425,8 @@ export default function Admin() {
           </div>
 
           <button
-            onClick={handleLogin}
+            type="submit"
+            disabled={isLoggingIn}
             style={{
               width: '100%',
               padding: 12,
@@ -214,16 +436,48 @@ export default function Admin() {
               borderRadius: 8,
               fontSize: 14,
               fontWeight: 700,
-              cursor: 'pointer',
+              cursor: isLoggingIn ? 'wait' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: 8
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>lock_open</span>
-            Acceder al Admin
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>{isLoggingIn ? 'progress_activity' : 'lock_open'}</span>
+            {isLoggingIn ? 'Verificando…' : 'Acceder al Admin'}
           </button>
+
+          <button
+            type="button"
+            onClick={handlePasswordRecoveryRequest}
+            disabled={isLoggingIn}
+            style={{
+              width: '100%',
+              marginTop: 12,
+              padding: 8,
+              background: 'transparent',
+              color: '#555',
+              border: 'none',
+              fontSize: 12,
+              cursor: isLoggingIn ? 'wait' : 'pointer',
+              textDecoration: 'underline'
+            }}
+          >
+            Crear o recuperar contraseña
+          </button>
+          </form>
+
+          {notice && (
+            <p style={{
+              fontSize: 12,
+              color: '#2e7d32',
+              textAlign: 'center',
+              marginTop: 16,
+              lineHeight: 1.5
+            }}>
+              {notice}
+            </p>
+          )}
 
           <p style={{
             fontSize: 11,
@@ -231,14 +485,7 @@ export default function Admin() {
             textAlign: 'center',
             marginTop: 20
           }}>
-            Contraseña por defecto: <code style={{
-              background: '#f5f5f5',
-              padding: '2px 6px',
-              borderRadius: 4,
-              fontFamily: 'monospace'
-            }}>admin123</code>
-            <br />
-            Cámbiala desde Configuración después de entrar
+            Acceso protegido mediante Supabase Auth.
           </p>
         </motion.div>
       </div>
@@ -378,10 +625,10 @@ export default function Admin() {
                 borderRadius: 12
               }}>
                 <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
-                  Cambiar contraseña de acceso
+                  Cuenta administrativa
                 </h3>
                 <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>
-                  Esta contraseña protege el acceso al panel de administración
+                  La sesión está protegida mediante Supabase Auth.
                 </p>
                 
                 <label style={{
@@ -392,11 +639,11 @@ export default function Admin() {
                   display: 'block',
                   marginBottom: 6
                 }}>
-                  Nueva contraseña
+                  Correo autenticado
                 </label>
                 <input
-                  type="text"
-                  value="admin123"
+                  type="email"
+                  value={authenticatedEmail}
                   disabled
                   style={{
                     width: '100%',
@@ -424,8 +671,8 @@ export default function Admin() {
                 }}>
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>warning</span>
                   <div>
-                    <strong>Importante:</strong> Guarda esta contraseña en un lugar seguro.
-                    Si la olvidas, tendrás que editar el archivo de configuración manualmente.
+                    <strong>Importante:</strong> Los usuarios y las contraseñas se administran
+                    desde Authentication → Users en el panel de Supabase.
                   </div>
                 </div>
               </div>

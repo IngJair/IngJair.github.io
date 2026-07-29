@@ -1,16 +1,10 @@
-import { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useSiteContent } from '../context/SiteContentContext';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { useSiteContent } from '../context/useSiteContent';
 import './ReviewForm.css';
-
-const EVENT_TYPES = [
-  'Bodas', 'Quinceañeros', 'Fiestas Infantiles', 'Compromisos',
-  'Bautizos', 'Eventos Corporativos', 'Sesiones Personales', 'Otro'
-];
 
 export default function ReviewForm({ onClose, embedded = false }) {
   const { submitReview, content } = useSiteContent();
-  const photoRef = useRef(null);
   
   const [form, setForm] = useState({
     name: '',

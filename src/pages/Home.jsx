@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import PageTransition from '../components/PageTransition';
-import { useSiteContent } from '../context/SiteContentContext';
+import { useSiteContent } from '../context/useSiteContent';
 import { HomePromoPopup } from '../components/PromoPopup';
 import './Home.css';
 
@@ -15,11 +15,19 @@ const applyStyle = (styleObj, baseStyle = {}) => ({
   color: styleObj?.color || baseStyle.color,
 });
 
+const HERO_FALLBACK_IMAGE = '/imagenes/4457575698e39f2bc156fc256b379a32.jpg';
+const INTRO_FALLBACK_IMAGE = '/imagenes/fotografia-retrato-estilos.jpg';
+
+const replaceBrokenImage = (event, fallback) => {
+  event.currentTarget.onerror = null;
+  event.currentTarget.src = fallback;
+};
+
 // Services are now fetched from context
 const DEFAULT_SERVICE_IMAGES = [
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuBl_4ke40ZEWnCEra0kZhvqiPk6buWaVvyO48BNtNz7B2597gJlDGOls8CRQg8fsRYAxSzIT9hWRzK1G41NOhBAQs2gIsyoZP4KRbpaSLzr_k97oWR6rDs0tXQcVF6URVkWtqNFaitBvuwvTbjZiLqg912FMqdmPC1TZTpmnWzg7Ikhzlr11ym-P8fXhldZUD2iRrXWxB4HJg3tOI88edcKcpcWZym_d9mKdTPeZif3OVvkytpE_SM6Rd3zZ3kpJ33P0uUCt9oB4XNo',
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuBfpHDiUGFox-xQ_atfdkRJnTRbaXSDCu2AMMv5itV6v3_ZPxDBsQLN7VtqC1-rb_qG27A3ivo2vFshbiaegK1xJPO1IzOZSXvkA14A8zWPDoh9Co--cbRZNc15neSSBkQ0RvCPGB0OByU4X9-DKBrVUDi7Worg8AVaq9NIIyFt8C5FMLL7OwOODUYlVYNj-RbRwCzNRlHixhEnGsKtWQJ3c9nHnFLEWZ2kl9niJlnG9-mV6wq42E3HIT9cKJl86ejwfZqD8PPoApHZ',
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuCm4COf441WkoJ7I4evOBKE6l_p8fOX9YpAV6r74fvtlOMp5TGFJwlpxdfQrpg6Az_fnixTQUPdGBOxYyQwknM42jm_pH8HkHxSfk9TecC6Pyl8rY8-J2K0GCKIANhUfMRyg9nOppHpE4ROBmGAvSoHIWr3iApoSQWXMiOyubSOCtm4lt3vP07BRGyqK4qcD6lctRCBHYlFNCEggjXfaLF6GezpSQ_ioSen1KiXRoiiabhpid0tdYvayWZ4bV69ivemtD8i1sxtuEdb',
+  '/imagenes/4457575698e39f2bc156fc256b379a32.jpg',
+  '/imagenes/3614681898a392d1326c6f6d0a3ef487.jpg',
+  '/imagenes/ce76a65a37ac26cfb54867b6188334ae.jpg',
 ];
 
 const fadeUpVariants = {
@@ -114,7 +122,8 @@ export default function Home() {
       >
         <div className="hero__bg">
           <motion.img
-            src={content.hero.backgroundImage || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCe3pG-Sv4PNYhFAnOjHMHuoLJM2ficfHU6lZJJfaYVySmqq1K5kn8wQ66yVm7kVJMBW1QHFk5z6h73PMaYLW5wnXB9c5_W-jh8ue4g_fBIqG5JhQmGgTLqb43N3tCidq71fvG5g4g9o2lYRXzBhOvZAkTCKGV56S-1rW7jkZHxR40bgEU5B2ZgNlWt2l0DK8kuvPrOJWt0wR5QUSCnLdVtTKPHH_U9HO4o3oJx2_Cxlq0YuNH6gRVUMsVcBCnA4B4wBqm7fsBsZM'}
+            src={content.hero.backgroundImage || HERO_FALLBACK_IMAGE}
+            onError={event => replaceBrokenImage(event, HERO_FALLBACK_IMAGE)}
             alt="Cinematic Wedding Moment"
             className="hero__img hero__img--desktop"
             initial={{ scale: 1.08 }}
@@ -123,7 +132,8 @@ export default function Home() {
             style={{ y: heroImageY }}
           />
           <motion.img
-            src={content.hero.mobileBackgroundImage || content.hero.backgroundImage || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCe3pG-Sv4PNYhFAnOjHMHuoLJM2ficfHU6lZJJfaYVySmqq1K5kn8wQ66yVm7kVJMBW1QHFk5z6h73PMaYLW5wnXB9c5_W-jh8ue4g_fBIqG5JhQmGgTLqb43N3tCidq71fvG5g4g9o2lYRXzBhOvZAkTCKGV56S-1rW7jkZHxR40bgEU5B2ZgNlWt2l0DK8kuvPrOJWt0wR5QUSCnLdVtTKPHH_U9HO4o3oJx2_Cxlq0YuNH6gRVUMsVcBCnA4B4wBqm7fsBsZM'}
+            src={content.hero.mobileBackgroundImage || content.hero.backgroundImage || HERO_FALLBACK_IMAGE}
+            onError={event => replaceBrokenImage(event, HERO_FALLBACK_IMAGE)}
             alt="Cinematic Wedding Moment Mobile"
             className="hero__img hero__img--mobile"
             initial={{ scale: 1.08 }}
@@ -185,7 +195,8 @@ export default function Home() {
             viewport={{ once: true, amount: 0.3 }}
           >
             <motion.img
-              src={content.intro.image || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCVQ_1Kc8kXJhFSLMgXHAeXHFEI4dNBpW6mRe-2cFsTR6lDERH2a1kvJGGP2rF-b1k_AwJwbmLCkm7G7nNjFwx67_K1h7Z5V1jqFQZ_L_WE8VzWHqRBIqHrxbEQkVdVaIXLl3bNLhVzQ8EZZ9S1h2yiXzOaaxaXnw0w3xSrHnX0tlHVNnE5f5U2J-UvD7JWRuFpQBCG8uMRz5XbRv0J09ew8FqizfSLz9qhBr7jY1k0Dg0MR4dIZHNh9'}
+              src={content.intro.image || INTRO_FALLBACK_IMAGE}
+              onError={event => replaceBrokenImage(event, INTRO_FALLBACK_IMAGE)}
               alt="Photographer Portrait"
               className="intro__img"
               variants={clipRevealVariants}
@@ -251,6 +262,7 @@ export default function Home() {
                 <div className="home-services__img-wrap">
                   <motion.img 
                     src={s.image || DEFAULT_SERVICE_IMAGES[i]} 
+                    onError={event => replaceBrokenImage(event, DEFAULT_SERVICE_IMAGES[i % DEFAULT_SERVICE_IMAGES.length])}
                     alt={s.title} 
                     className="home-services__img" 
                     initial={{ clipPath: 'inset(0% 0% 100% 0%)' }}

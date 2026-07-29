@@ -1,4 +1,4 @@
-import { NavLink, Link, useLocation } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NAV_LINKS } from '../config';
@@ -7,8 +7,6 @@ import './Navbar.css';
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const location = useLocation();
-
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 40);

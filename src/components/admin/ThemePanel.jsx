@@ -1,4 +1,4 @@
-import { useSiteContent } from '../../context/SiteContentContext';
+import { useSiteContent } from '../../context/useSiteContent';
 import { AdminSection, AdminField } from './AdminField';
 
 const FONT_DISPLAY_OPTIONS = [

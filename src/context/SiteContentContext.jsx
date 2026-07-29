@@ -1,9 +1,18 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { SiteContentContext } from './useSiteContent';
 
-const SiteContentContext = createContext(null);
+const CONTENT_LOAD_TIMEOUT_MS = 4000;
 
-export const ADMIN_PASSWORD = btoa("admin123");
+function withTimeout(promise, timeoutMs = CONTENT_LOAD_TIMEOUT_MS) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error('Tiempo de espera agotado')), timeoutMs);
+  });
+
+  return Promise.race([Promise.resolve(promise), timeout])
+    .finally(() => clearTimeout(timeoutId));
+}
 
 const defaultContent = {
   brand: {
@@ -34,7 +43,7 @@ const defaultContent = {
     ctaSecondary: 'Reservar Cita',
     ctaSecondaryStyle: { fontSize: '13px', bold: true, italic: false, underline: false, color: '#ffffff' },
     ctaSecondaryDestination: '/contact',
-    backgroundImage: '/hero.png',
+    backgroundImage: '/imagenes/4457575698e39f2bc156fc256b379a32.jpg',
     mobileBackgroundImage: '',
   },
   intro: {
@@ -46,7 +55,7 @@ const defaultContent = {
     bodyStyle: { fontSize: '16px', bold: false, italic: false, underline: false, color: '#555555' },
     ctaText: 'Conoce más sobre nosotros →',
     ctaTextStyle: { fontSize: '13px', bold: true, italic: false, underline: true, color: '#0a0a0a' },
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCVQ_1Kc8kXJhFSLMgXHAeXHFEI4dNBpW6mRe-2cFsTR6lDERH2a1kvJGGP2rF-b1k_AwJwbmLCkm7G7nNjFwx67_K1h7Z5V1jqFQZ_L_WE8VzWHqRBIqHrxbEQkVdVaIXLl3bNLhVzQ8EZZ9S1h2yiXzOaaxaXnw0w3xSrHnX0tlHVNnE5f5U2J-UvD7JWRuFpQBCG8uMRz5XbRv0J09ew8FqizfSLz9qhBr7jY1k0Dg0MR4dIZHNh9',
+    image: '/imagenes/fotografia-retrato-estilos.jpg',
   },
   services: {
     hero: {
@@ -474,21 +483,23 @@ export function SiteContentProvider({ children }) {
       // ─── INTENTO 1: Leer desde Supabase ─────────────────────────────────
       let supabaseOk = false;
       let supabaseData = null;
-      let supabaseError = null;
+      let supabaseError;
 
       try {
         console.log('[Sync] Loading from Supabase...');
-        const result = await supabase
-          .from('site_content')
-          .select('data')
-          .eq('id', 'main')
-          .maybeSingle(); // maybeSingle() devuelve null (sin error) si no hay fila
+        const result = await withTimeout(
+          supabase
+            .from('site_content')
+            .select('data')
+            .eq('id', 'main')
+            .maybeSingle()
+        ); // maybeSingle() devuelve null (sin error) si no hay fila
 
-        supabaseOk = true; // Supabase respondió (aunque no haya datos)
+        supabaseOk = !result.error;
         supabaseData = result.data;
         supabaseError = result.error;
       } catch (e) {
-        console.warn('[Sync] Using local fallback — Supabase unreachable:', e.message);
+        supabaseError = e;
       }
 
       // ─── CASO A: Supabase tiene datos → usarlos directamente ────────────
@@ -531,7 +542,7 @@ export function SiteContentProvider({ children }) {
       }
 
       // ─── CASO C: Supabase offline o error de red → fallback localStorage ─
-      console.warn('[Sync] Using local fallback — Supabase error:', supabaseError?.message);
+      console.info('[Sync] Using local fallback:', supabaseError?.message || 'Supabase no disponible');
       try {
         const saved = localStorage.getItem('luxe_content');
         if (saved) {
@@ -557,7 +568,7 @@ export function SiteContentProvider({ children }) {
 
     // Intentar Supabase primero
     try {
-      await supabase.from('pending_reviews').insert([{
+      const { error } = await supabase.from('pending_reviews').insert([{
         name: newReview.name,
         event: newReview.event,
         event_type: newReview.eventType,
@@ -568,7 +579,8 @@ export function SiteContentProvider({ children }) {
         date: newReview.date,
         status: 'pending',
       }]);
-    } catch (e) {
+      if (error) throw error;
+    } catch {
       // Fallback: localStorage
       const pending = JSON.parse(localStorage.getItem('luxe_pending_reviews') || '[]');
       pending.push(newReview);
@@ -657,8 +669,9 @@ export function SiteContentProvider({ children }) {
   // Rechazar reseña pendiente
   const rejectReview = useCallback(async (reviewId) => {
     try {
-      await supabase.from('pending_reviews').update({ status: 'rejected' }).eq('id', reviewId);
-    } catch (e) {
+      const { error } = await supabase.from('pending_reviews').update({ status: 'rejected' }).eq('id', reviewId);
+      if (error) throw error;
+    } catch {
       // Fallback: localStorage
       const pending = JSON.parse(localStorage.getItem('luxe_pending_reviews') || '[]');
       localStorage.setItem('luxe_pending_reviews', JSON.stringify(pending.filter(r => r.id !== reviewId)));
@@ -737,7 +750,11 @@ export function SiteContentProvider({ children }) {
       if (!error) {
         console.log("Save content success");
         // Espejo en localStorage por si Supabase no está disponible la próxima carga
-        try { localStorage.setItem('luxe_content', JSON.stringify(content)); } catch (_) {}
+        try {
+          localStorage.setItem('luxe_content', JSON.stringify(content));
+        } catch (storageError) {
+          console.warn('[localStorage] No se pudo actualizar el respaldo:', storageError);
+        }
         setHasUnsaved(false);
         return { success: true };
       }
@@ -795,5 +812,3 @@ export function SiteContentProvider({ children }) {
     </SiteContentContext.Provider>
   );
 }
-
-export const useSiteContent = () => useContext(SiteContentContext);

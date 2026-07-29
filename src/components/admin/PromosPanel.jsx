@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSiteContent } from '../../context/SiteContentContext';
-import { ImageUploadZone } from '../../lib/useStorageUpload';
+import { useSiteContent } from '../../context/useSiteContent';
+import ImageUploadZone from './ImageUploadZone';
 
 export default function PromosPanel() {
   const { content, update } = useSiteContent();

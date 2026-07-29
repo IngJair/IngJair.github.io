@@ -1,6 +1,6 @@
-import { useSiteContent } from '../../context/SiteContentContext';
+import { useSiteContent } from '../../context/useSiteContent';
 import { AdminSection, AdminField } from './AdminField';
-import { ImageUploadZone } from '../../lib/useStorageUpload';
+import ImageUploadZone from './ImageUploadZone';
 
 export default function HomePanel() {
   const { content, update } = useSiteContent();

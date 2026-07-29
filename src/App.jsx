@@ -1,15 +1,20 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect } from 'react';
-import { useSiteContent } from './context/SiteContentContext';
+import { lazy, Suspense, useEffect } from 'react';
+import { useSiteContent } from './context/useSiteContent';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import Home from './pages/Home';
-import Portfolio from './pages/Portfolio';
-import EventDetail from './pages/EventDetail';
-import Services from './pages/Services';
-import Contact from './pages/Contact';
-import Admin from './pages/Admin';
+
+const Home = lazy(() => import('./pages/Home'));
+const Portfolio = lazy(() => import('./pages/Portfolio'));
+const EventDetail = lazy(() => import('./pages/EventDetail'));
+const Services = lazy(() => import('./pages/Services'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Admin = lazy(() => import('./pages/Admin'));
+
+function RouteFallback() {
+  return <div className="app-loading-screen" aria-label="Cargando página" />;
+}
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -58,16 +63,18 @@ export default function App() {
       <ScrollToTop />
       {!isAdmin && <Navbar />}
       <main style={{ height: isAdmin ? '100vh' : 'auto' }}>
-        <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<Home />} />
-            <Route path="/portfolio" element={<Portfolio />} />
-            <Route path="/portfolio/:slug" element={<EventDetail />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/admin" element={<Admin />} />
-          </Routes>
-        </AnimatePresence>
+        <Suspense fallback={<RouteFallback />}>
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              <Route path="/" element={<Home />} />
+              <Route path="/portfolio" element={<Portfolio />} />
+              <Route path="/portfolio/:slug" element={<EventDetail />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/admin" element={<Admin />} />
+            </Routes>
+          </AnimatePresence>
+        </Suspense>
       </main>
       {!isAdmin && <Footer />}
     </>
