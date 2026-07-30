@@ -1,6 +1,7 @@
 /**
- * useStorageUpload — Hook centralizado para subir/eliminar archivos en Supabase Storage.
- * Bucket: elky-studios
+ * useStorageUpload — Hook centralizado para subir/eliminar archivos.
+ * Las cargas nuevas usan Cloudflare R2. Supabase Storage se mantiene como
+ * compatibilidad para los archivos anteriores durante la migración.
  *
  * Estructura de carpetas:
  *   imagenes/   → hero, intro, portafolio (portadas)
@@ -13,6 +14,10 @@ import { useState, useCallback } from 'react';
 import { supabase } from './supabase';
 
 const BUCKET = 'elky-studios';
+const DEFAULT_MEDIA_API_URL = 'https://elky-studios-media-api.e-j-javier.workers.dev';
+const MEDIA_API_URL = (
+  import.meta.env.VITE_MEDIA_API_URL || DEFAULT_MEDIA_API_URL
+).replace(/\/+$/, '');
 
 // ─── Validaciones ────────────────────────────────────────────────────────────
 const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'webp'];
@@ -21,7 +26,7 @@ const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const VIDEO_MIME_TYPES = ['video/mp4'];
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;   // 2 MB después de optimizar
 const MAX_IMAGE_SOURCE_BYTES = 25 * 1024 * 1024;
-const MAX_VIDEO_BYTES = 300 * 1024 * 1024; // 300 MB
+const MAX_VIDEO_BYTES = 90 * 1024 * 1024; // Margen bajo el límite HTTP de Workers Free
 
 function validateFile(file, folder) {
   const ext = file.name.split('.').pop().toLowerCase();
@@ -29,7 +34,7 @@ function validateFile(file, folder) {
     if (!VIDEO_EXTS.includes(ext) || !VIDEO_MIME_TYPES.includes(file.type))
       return `Solo se permiten videos MP4. Archivo recibido: .${ext}`;
     if (file.size > MAX_VIDEO_BYTES)
-      return `El video supera el límite de 300 MB (${(file.size / 1024 / 1024).toFixed(1)} MB).`;
+      return `El video supera el límite de 90 MB (${(file.size / 1024 / 1024).toFixed(1)} MB).`;
   } else {
     if (!IMAGE_EXTS.includes(ext) || !IMAGE_MIME_TYPES.includes(file.type))
       return `Solo JPG, PNG o WebP. Archivo recibido: .${ext}`;
@@ -83,20 +88,81 @@ function buildPath(folder, file) {
   return `${folder}/${uniqueId}-${safeName}.${ext}`;
 }
 
-/** Devuelve la URL pública de un path dentro del bucket */
+function encodePath(path) {
+  return path.split('/').map(encodeURIComponent).join('/');
+}
+
+function r2PathFromUrl(url) {
+  if (!url || !MEDIA_API_URL) return null;
+  try {
+    const mediaOrigin = new URL(MEDIA_API_URL);
+    const objectUrl = new URL(url);
+    if (objectUrl.origin !== mediaOrigin.origin || !objectUrl.pathname.startsWith('/media/')) {
+      return null;
+    }
+    return objectUrl.pathname
+      .slice('/media/'.length)
+      .split('/')
+      .map(decodeURIComponent)
+      .join('/');
+  } catch {
+    return null;
+  }
+}
+
+function supabasePathFromUrl(url) {
+  if (!url) return null;
+  const marker = `/object/public/${BUCKET}/`;
+  const idx = url.indexOf(marker);
+  return idx !== -1 ? url.slice(idx + marker.length) : null;
+}
+
+/** Devuelve la URL pública de un path dentro del almacenamiento activo. */
 export function getPublicUrl(path) {
   if (!path) return '';
+  if (MEDIA_API_URL) return `${MEDIA_API_URL}/media/${encodePath(path)}`;
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data?.publicUrl || '';
 }
 
-/** Extrae el path relativo de una URL pública de Supabase Storage */
+/** Extrae el path relativo de una URL pública de R2 o Supabase Storage. */
 export function pathFromUrl(url) {
-  if (!url) return null;
-  // https://<project>.supabase.co/storage/v1/object/public/elky-studios/<path>
-  const marker = `/object/public/${BUCKET}/`;
-  const idx = url.indexOf(marker);
-  return idx !== -1 ? url.slice(idx + marker.length) : null;
+  return r2PathFromUrl(url) || supabasePathFromUrl(url);
+}
+
+async function uploadToR2(path, file) {
+  const { data, error: sessionError } = await supabase.auth.getSession();
+  const accessToken = data?.session?.access_token;
+  if (sessionError || !accessToken) {
+    throw new Error('La sesión administrativa venció. Vuelve a iniciar sesión.');
+  }
+
+  const response = await fetch(`${MEDIA_API_URL}/media/${encodePath(path)}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': file.type,
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    },
+    body: file,
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.error || `Cloudflare respondió con estado ${response.status}.`);
+  }
+  return result.url || getPublicUrl(path);
+}
+
+async function deleteFromR2(path) {
+  const { data, error: sessionError } = await supabase.auth.getSession();
+  const accessToken = data?.session?.access_token;
+  if (sessionError || !accessToken) return false;
+
+  const response = await fetch(`${MEDIA_API_URL}/media/${encodePath(path)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  return response.ok;
 }
 
 // ─── Hook principal ───────────────────────────────────────────────────────────
@@ -106,7 +172,7 @@ export function useStorageUpload() {
   const [error, setError] = useState(null);
 
   /**
-   * Sube un archivo a Supabase Storage.
+   * Sube un archivo a Cloudflare R2.
    * @param {File} file — Archivo a subir
    * @param {'imagenes'|'videos'|'logos'|'banners'} folder — Carpeta destino
    * @param {string|null} oldUrl — URL anterior para eliminar (reemplazo)
@@ -133,25 +199,16 @@ export function useStorageUpload() {
       // 1. Subir el archivo nuevo antes de retirar el anterior. Así, un fallo
       // de red nunca deja una imagen existente apuntando a un archivo borrado.
       const path = buildPath(folder, preparedFile);
-      const { error: uploadError } = await supabase.storage
-        .from(BUCKET)
-        .upload(path, preparedFile, { upsert: false, cacheControl: '3600' });
-
-      if (uploadError) {
-        setError(`Error al subir: ${uploadError.message}`);
-        return null;
-      }
-
-      // 2. Obtener URL pública.
-      const publicUrl = getPublicUrl(path);
+      const publicUrl = await uploadToR2(path, preparedFile);
 
       // 3. Eliminar el archivo anterior solamente después de confirmar la
-      // nueva subida. Los enlaces externos y datos antiguos se conservan.
-      const oldPath = pathFromUrl(oldUrl);
+      // nueva subida. Los archivos antiguos de Supabase se conservan durante
+      // la transición; solo se retiran reemplazos que ya pertenecían a R2.
+      const oldPath = r2PathFromUrl(oldUrl);
       if (oldPath && oldPath !== path) {
-        const { error: removeError } = await supabase.storage.from(BUCKET).remove([oldPath]);
-        if (removeError) {
-          console.warn('[Storage] No se pudo retirar el archivo reemplazado:', removeError.message);
+        const removed = await deleteFromR2(oldPath);
+        if (!removed) {
+          console.warn('[Storage] No se pudo retirar el archivo reemplazado de R2.');
         }
       }
 
@@ -165,14 +222,17 @@ export function useStorageUpload() {
   }, []);
 
   /**
-   * Elimina un archivo dado su URL pública.
-   * @param {string} url — URL pública de Supabase Storage
+   * Elimina un archivo dado su URL pública, sea de R2 o del sistema anterior.
+   * @param {string} url — URL pública
    * @returns {Promise<boolean>}
    */
   const deleteFile = useCallback(async (url) => {
-    const path = pathFromUrl(url);
-    if (!path) return false;
-    const { error: delError } = await supabase.storage.from(BUCKET).remove([path]);
+    const r2Path = r2PathFromUrl(url);
+    if (r2Path) return deleteFromR2(r2Path);
+
+    const legacyPath = supabasePathFromUrl(url);
+    if (!legacyPath) return false;
+    const { error: delError } = await supabase.storage.from(BUCKET).remove([legacyPath]);
     if (delError) {
       console.warn('[Storage] Error al eliminar:', delError.message);
       return false;

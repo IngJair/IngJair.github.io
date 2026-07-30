@@ -1,6 +1,7 @@
 # Elky Studios
 
-Sitio web y panel de administración de Elky Studios, construido con React, Vite y Supabase.
+Sitio web y panel de administración de Elky Studios, construido con React, Vite,
+Supabase y Cloudflare R2.
 
 ## Desarrollo local
 
@@ -15,9 +16,25 @@ El proyecto usa:
 - `site_content` para el contenido editable del sitio.
 - `pending_reviews` para las reseñas enviadas por visitantes.
 - `contact_requests` para las solicitudes de reserva.
-- El bucket público `elky-studios` para imágenes y videos.
+- Supabase Storage `elky-studios` conserva los archivos anteriores durante la migración.
+- Cloudflare R2 `elky-studios-media` recibe las nuevas imágenes y videos mediante
+  un Worker que valida la sesión administrativa de Supabase.
 
 [`supabase/security.sql`](./supabase/security.sql) crea las tablas, índices, bucket, permisos y políticas RLS. Es idempotente y puede volver a ejecutarse desde el SQL Editor.
+
+## Cloudflare R2
+
+El Worker reproducible está en
+[`cloudflare/media-worker.js`](./cloudflare/media-worker.js) y su configuración
+en [`cloudflare/wrangler.media.jsonc`](./cloudflare/wrangler.media.jsonc).
+
+```bash
+npm run deploy:media
+```
+
+La página usa por defecto
+`https://elky-studios-media-api.e-j-javier.workers.dev`. Puede reemplazarse con
+`VITE_MEDIA_API_URL` cuando se conecte un dominio propio.
 
 ## Acceso administrativo
 

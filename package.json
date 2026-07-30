@@ -5,14 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
+    "dev:media": "wrangler dev --config cloudflare/wrangler.media.jsonc",
     "build": "vite build",
     "build:pages": "vite build --mode github-pages",
+    "deploy:media": "wrangler deploy --config cloudflare/wrangler.media.jsonc",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
     "framer-motion": "^12.38.0",
+    "jose": "^6.2.5",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-router": "8.3.0"
