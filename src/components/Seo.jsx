@@ -68,14 +68,15 @@ export default function Seo() {
   const { content } = useSiteContent();
 
   useEffect(() => {
-    const isPortfolioDetail = pathname.startsWith('/portfolio/');
+    const normalizedPath = pathname === '/' ? '/' : pathname.replace(/\/+$/, '');
+    const isPortfolioDetail = normalizedPath.startsWith('/portfolio/');
     const routeKey = isPortfolioDetail
       ? '/portfolio'
-      : (PAGE_META[pathname] ? pathname : '*');
+      : (PAGE_META[normalizedPath] ? normalizedPath : '*');
     const meta = PAGE_META[routeKey];
     const canonicalPath = isPortfolioDetail
-      ? pathname
-      : (routeKey === '*' ? pathname : (routeKey === '/' ? '/' : routeKey));
+      ? normalizedPath
+      : (routeKey === '*' ? normalizedPath : (routeKey === '/' ? '/' : routeKey));
     const canonicalUrl = `${SITE_URL}${canonicalPath}`;
 
     document.title = meta.title;
