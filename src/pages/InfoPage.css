@@ -1,0 +1,144 @@
+.info-hero {
+  background:
+    linear-gradient(135deg, rgba(10, 10, 10, 0.96), rgba(36, 27, 11, 0.92)),
+    url('/imagenes/4457575698e39f2bc156fc256b379a32.jpg') center 44% / cover;
+  color: #fff;
+  padding-top: 170px;
+  padding-bottom: 90px;
+}
+
+.info-hero__inner {
+  max-width: 820px;
+  text-align: center;
+}
+
+.info-hero__inner p {
+  color: rgba(255, 255, 255, 0.76);
+  margin: 20px auto 0;
+  max-width: 650px;
+}
+
+.info-page {
+  background: var(--surface, #fff);
+}
+
+.info-page__eyebrow {
+  color: #d5aa4d;
+  display: block;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+
+.info-page__content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 64px;
+  align-items: start;
+}
+
+.info-page__article {
+  max-width: 820px;
+}
+
+.info-page__article h2 {
+  font-family: var(--font-display, 'Playfair Display', serif);
+  font-size: clamp(1.55rem, 3vw, 2.1rem);
+  margin: 40px 0 12px;
+}
+
+.info-page__article p,
+.info-faq__answer p,
+.info-page__cta p {
+  color: var(--on-surface-variant, #5c5c5c);
+  line-height: 1.8;
+}
+
+.info-page__updated {
+  border-left: 3px solid #bf953f;
+  padding-left: 14px;
+}
+
+.info-faq {
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.info-faq__item {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.info-faq__question {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  font: 600 1rem/1.45 var(--font-body, 'Montserrat', sans-serif);
+  justify-content: space-between;
+  padding: 24px 0;
+  text-align: left;
+  width: 100%;
+}
+
+.info-faq__answer {
+  overflow: hidden;
+}
+
+.info-faq__answer p {
+  margin: 0;
+  padding: 0 48px 24px 0;
+}
+
+.info-page__cta {
+  background: #0a0a0a;
+  color: #fff;
+  padding: 34px;
+  position: sticky;
+  top: 124px;
+}
+
+.info-page__cta h2 {
+  font-family: var(--font-display, 'Playfair Display', serif);
+  font-size: 1.8rem;
+  margin-bottom: 12px;
+}
+
+.info-page__cta p {
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 24px;
+}
+
+.info-page__cta--inline {
+  margin-top: 48px;
+  position: static;
+}
+
+@media (max-width: 860px) {
+  .info-page__content {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .info-page__cta {
+    position: static;
+  }
+}
+
+@media (max-width: 600px) {
+  .info-hero {
+    padding-top: 135px;
+    padding-bottom: 64px;
+  }
+
+  .info-faq__question {
+    gap: 18px;
+  }
+
+  .info-faq__answer p {
+    padding-right: 0;
+  }
+
+  .info-page__cta {
+    padding: 26px;
+  }
+}

@@ -1,9 +1,10 @@
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
 import { lazy, Suspense, useEffect } from 'react';
 import { useSiteContent } from './context/useSiteContent';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import Seo from './components/Seo';
 
 const Home = lazy(() => import('./pages/Home'));
 const Portfolio = lazy(() => import('./pages/Portfolio'));
@@ -11,6 +12,9 @@ const EventDetail = lazy(() => import('./pages/EventDetail'));
 const Services = lazy(() => import('./pages/Services'));
 const Contact = lazy(() => import('./pages/Contact'));
 const Admin = lazy(() => import('./pages/Admin'));
+const Faq = lazy(() => import('./pages/Faq'));
+const Privacy = lazy(() => import('./pages/Privacy'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 function RouteFallback() {
   return <div className="app-loading-screen" aria-label="Cargando página" />;
@@ -61,6 +65,7 @@ export default function App() {
   return (
     <>
       <ScrollToTop />
+      <Seo />
       {!isAdmin && <Navbar />}
       <main style={{ height: isAdmin ? '100vh' : 'auto' }}>
         <Suspense fallback={<RouteFallback />}>
@@ -71,7 +76,10 @@ export default function App() {
               <Route path="/portfolio/:slug" element={<EventDetail />} />
               <Route path="/services" element={<Services />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/faq" element={<Faq />} />
+              <Route path="/privacy" element={<Privacy />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </AnimatePresence>
         </Suspense>

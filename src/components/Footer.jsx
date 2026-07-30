@@ -1,4 +1,4 @@
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link } from 'react-router';
 import { useSiteContent } from '../context/useSiteContent';
 import './Footer.css';
 
@@ -51,8 +51,8 @@ export default function Footer() {
 
         <div className="footer__col">
           <h4 className="text-label-sm footer__col-title">Soporte</h4>
-          <Link to="/contact" className="text-label-sm footer__link">Preguntas Frecuentes</Link>
-          <Link to="/contact" className="text-label-sm footer__link">Privacidad</Link>
+          <Link to="/faq" className="text-label-sm footer__link">Preguntas Frecuentes</Link>
+          <Link to="/privacy" className="text-label-sm footer__link">Privacidad</Link>
           <Link to="/admin" className="text-label-sm footer__link" style={{ opacity: 0.5 }}>Administración</Link>
         </div>
 

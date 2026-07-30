@@ -23,7 +23,24 @@ export default defineConfig(async ({ mode }) => {
       strictPort: true,
     },
     build: {
-      chunkSizeWarningLimit: 1000,
+      chunkSizeWarningLimit: 500,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined
+            if (id.includes('framer-motion')) return 'motion'
+            if (id.includes('@supabase')) return 'supabase'
+            if (
+              id.includes('/react/')
+              || id.includes('/react-dom/')
+              || id.includes('/react-router/')
+            ) {
+              return 'react'
+            }
+            return 'vendor'
+          },
+        },
+      },
       ...(isGitHubPages ? { outDir: 'dist-pages' } : {}),
     },
   }

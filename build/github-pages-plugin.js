@@ -1,4 +1,4 @@
-import { copyFile, mkdir } from 'node:fs/promises'
+import { access, copyFile, mkdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import process from 'node:process'
 
@@ -16,9 +16,14 @@ export function githubPagesFallback() {
     async closeBundle() {
       const indexFile = resolve(root, outputDirectory, 'index.html')
       const fallbackFile = resolve(root, outputDirectory, '404.html')
+      try {
+        await access(indexFile)
+      } catch {
+        return
+      }
       await copyFile(indexFile, fallbackFile)
 
-      for (const route of ['admin', 'portfolio', 'services', 'contact']) {
+      for (const route of ['admin', 'portfolio', 'services', 'contact', 'faq', 'privacy']) {
         const routeDirectory = resolve(root, outputDirectory, route)
         await mkdir(routeDirectory, { recursive: true })
         await copyFile(indexFile, resolve(routeDirectory, 'index.html'))

@@ -74,7 +74,7 @@ const defaultContent = {
         title: "Paquete Básico",
         subtitle: "Esenciales de Calidad",
         basePrice: 800,
-        currency: "€",
+        currency: "S/",
         isPrimary: false,
         image: "",
         features: ["6 Horas de cobertura", "Galería digital privada", "Edición profesional básica"]
@@ -84,7 +84,7 @@ const defaultContent = {
         title: "Paquete Premium",
         subtitle: "Nuestra Recomendación",
         basePrice: 1500,
-        currency: "€",
+        currency: "S/",
         isPrimary: true,
         image: "",
         features: ["10 Horas de cobertura", "Video highlight (5-7 min)", "Álbum físico de lujo", "Entrega en USB premium"]
@@ -94,7 +94,7 @@ const defaultContent = {
         title: "Paquete Full Evento",
         subtitle: "Experiencia Completa",
         basePrice: 2800,
-        currency: "€",
+        currency: "S/",
         isPrimary: false,
         image: "",
         features: ["Cobertura ilimitada", "Dos fotógrafos senior", "Sesión pre-boda incluida", "Video documental completo"]
@@ -104,21 +104,21 @@ const defaultContent = {
       {
         title: "Bodas & Elopements",
         desc: "Documentación íntima y elegante de su unión más sagrada.",
-        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBl_4ke40ZEWnCEra0kZhvqiPk6buWaVvyO48BNtNz7B2597gJlDGOls8CRQg8fsRYAxSzIT9hWRzK1G41NOhBAQs2gIsyoZP4KRbpaSLzr_k97oWR6rDs0tXQcVF6URVkWtqNFaitBvuwvTbjZiLqg912FMqdmPC1TZTpmnWzg7Ikhzlr11ym-P8fXhldZUD2iRrXWxB4HJg3tOI88edcKcpcWZym_d9mKdTPeZif3OVvkytpE_SM6Rd3zZ3kpJ33P0uUCt9oB4XNo",
+        image: "/imagenes/4457575698e39f2bc156fc256b379a32.jpg",
         linkText: "Ver Portafolio",
         linkDestination: "/portfolio?tipo=Bodas"
       },
       {
         title: "Eventos Corporativos",
         desc: "Capturando la sofisticación y el éxito de sus momentos empresariales.",
-        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBfpHDiUGFox-xQ_atfdkRJnTRbaXSDCu2AMMv5itV6v3_ZPxDBsQLN7VtqC1-rb_qG27A3ivo2vFshbiaegK1xJPO1IzOZSXvkA14A8zWPDoh9Co--cbRZNc15neSSBkQ0RvCPGB0OByU4X9-DKBrVUDi7Worg8AVaq9NIIyFt8C5FMLL7OwOODUYlVYNj-RbRwCzNRlHixhEnGsKtWQJ3c9nHnFLEWZ2kl9niJlnG9-mV6wq42E3HIT9cKJl86ejwfZqD8PPoApHZ",
+        image: "/imagenes/472672677_1144480881015835_2883235338421335865_n.jpg",
         linkText: "Ver Servicios",
         linkDestination: "/services?tipo=Eventos Corporativos"
       },
       {
         title: "Sesiones Personales",
         desc: "Retratos artísticos que revelan su verdadera personalidad.",
-        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCm4COf441WkoJ7I4evOBKE6l_p8fOX9YpAV6r74fvtlOMp5TGFJwlpxdfQrpg6Az_fnixTQUPdGBOxYyQwknM42jm_pH8HkHxSfk9TecC6Pyl8rY8-J2K0GCKIANhUfMRyg9nOppHpE4ROBmGAvSoHIWr3iApoSQWXMiOyubSOCtm4lt3vP07BRGyqK4qcD6lctRCBHYlFNCEggjXfaLF6GezpSQ_ioSen1KiXRoiiabhpid0tdYvayWZ4bV69ivemtD8i1sxtuEdb",
+        image: "/imagenes/fotografia-retrato-estilos.jpg",
         linkText: "Ver Portafolio",
         linkDestination: "/portfolio?tipo=Sesiones Personales"
       }
@@ -281,56 +281,7 @@ Podrias darme mas informacion?`,
     events: []
   },
   reviews: {
-    published: [
-      {
-        id: 1,
-        name: 'Elena Martínez',
-        event: 'Boda de Verano, 2023',
-        eventType: 'Bodas',
-        package: 'Paquete Full Evento',
-        text: 'La atención al detalle y la capacidad de capturar momentos espontáneos superó todas nuestras expectativas. Las fotos parecen sacadas de una revista.',
-        rating: 5,
-        photo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCkLHRVNfMA_vUVhrrhF1ieWOSfsi4hDdKWhqgIwGxJ60ATZrpMGm4SLtCQTjwOfQDRh0Y-Rnxqnu9URRnOYp9sDtMA6C2pQW2EJe-Vtt1qHjrJStpSKmJvlrGyg-tORCPChR_rMfhy0pyo2UvPNNhqrVCLBfcDLOMivc7sSV6uahLuP_L0lnuseh_6nQpGDEAQU2wUpDXSyoc166Y1GOqrrn8rJAUlwBLWnxV7MQGynhu-q9WKYb_PCFbSWy9M__-nVSTml7fyGwiQ',
-        date: '2023-08-15',
-        featured: false,
-      },
-      {
-        id: 2,
-        name: 'Ricardo Gómez',
-        event: 'Aniversario, 2023',
-        eventType: 'Sesiones Personales',
-        package: 'Paquete Premium',
-        text: 'Contratar el Paquete Premium fue la mejor decisión. El video highlight nos hace llorar cada vez que lo vemos. Gracias ELKY STUDIOS por todo.',
-        rating: 5,
-        photo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDipHIEEvdstReZeF6PZqFw3GWgXyOPaF3aDfVsMu1qE1K2NGbpyieIdzDLuNUfrNOrGE8gSnlGaQkAei7qYKYZqqW-uqjAn81nJiyWGJOGJp_tRd5AWCpJ5p4PBVaz-Hzw3iGeQTigmAgOQjE_ztrKkdOoGxPmWDyLA7jEUttQqvq30KwlPBhuoluM7GlViF4EpkcqKhB0mwFlbYDhnRVinWaohtpUL1HXtbNMnVARB_d4TcWpNCmUHyVANXaz_BqMCaQdxxNjehos',
-        date: '2023-11-20',
-        featured: false,
-      },
-      {
-        id: 3,
-        name: 'Sofía Valdés',
-        event: 'Boda Destino, 2024',
-        eventType: 'Bodas',
-        package: 'Paquete Full Evento',
-        text: 'Profesionalismo puro. Durante todo el evento ni siquiera notamos su presencia, pero capturaron cada detalle importante.',
-        rating: 5,
-        photo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDkQvEO9VeKaOo-DXaUtu5gCic2FCTjGFeDlx-YCnkuNJ5I_S-oeaqs4RhX_Q-IelN59-V8GrZOMmf3ZJLS4KM2XfbrAC87v-TTrV-Yq359reUrMVYYktBGXAn9aZeueVmev7xYJyPl0HK51-LHpSTWlrqHgaTRYtABXJO9s7dZ28kkOOz0HPsCRpmX11ENB_CH8TSrrqCMbLV96W05sNZcr2LY8AMt_athUaj70NXfdSB_qn2vm_1GPfGtQQDxreW8ia3iNCd-a9Qp',
-        date: '2024-03-10',
-        featured: false,
-      },
-      {
-        id: 4,
-        name: 'Javier Ruiz',
-        event: 'Gala Benéfica, 2024',
-        eventType: 'Eventos Corporativos',
-        package: 'Paquete Premium',
-        text: 'El álbum físico es una pieza de arte en sí misma. La calidad del papel y la impresión son insuperables. Totalmente recomendado.',
-        rating: 5,
-        photo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAwO0CWyQx4J_5zKaNTNxFkgavOx2cvRKn0Z2g_I8j7kjOPF8M1quts-u8aZVxnLgwB-3acIPU47-oGU4W0Aeh3Af8Oww9CALBxQGndMfC9_uFsk5lBM87xOxTyUg80QmGK9SmUCXawQ5fOgfQBLJmpYyZEaZ9T1CiW6FkHHBPBHqP2Xoj9IrMul5685WXLxIStynZOQrIN2mlv4Q1d7QOcjXA946c4j7MzCdX1N3kiKdq7ZmrxH0De8v6GymX--OT-LSmy_QfNDLkD',
-        date: '2024-06-05',
-        featured: false,
-      }
-    ],
+    published: [],
     pending: [],
     settings: {
       showOnServices: true,

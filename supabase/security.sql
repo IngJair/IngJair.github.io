@@ -3,6 +3,10 @@
 
 begin;
 
+-- Cuenta administrativa autorizada:
+-- javiercito_virgo1@hotmail.com
+-- UUID: 69770c28-7c21-4edb-8656-9198fbd02df4
+
 create table if not exists public.site_content (
   id text primary key,
   data jsonb not null default '{}'::jsonb,
@@ -88,20 +92,20 @@ drop policy if exists "Admins can insert site content" on public.site_content;
 create policy "Admins can insert site content"
 on public.site_content for insert
 to authenticated
-with check (true);
+with check (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid);
 
 drop policy if exists "Admins can update site content" on public.site_content;
 create policy "Admins can update site content"
 on public.site_content for update
 to authenticated
-using (true)
-with check (true);
+using (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid)
+with check (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid);
 
 drop policy if exists "Admins can delete site content" on public.site_content;
 create policy "Admins can delete site content"
 on public.site_content for delete
 to authenticated
-using (true);
+using (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid);
 
 drop policy if exists "Public can submit reviews" on public.pending_reviews;
 create policy "Public can submit reviews"
@@ -113,20 +117,20 @@ drop policy if exists "Admins can read reviews" on public.pending_reviews;
 create policy "Admins can read reviews"
 on public.pending_reviews for select
 to authenticated
-using (true);
+using (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid);
 
 drop policy if exists "Admins can update reviews" on public.pending_reviews;
 create policy "Admins can update reviews"
 on public.pending_reviews for update
 to authenticated
-using (true)
-with check (true);
+using (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid)
+with check (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid);
 
 drop policy if exists "Admins can delete reviews" on public.pending_reviews;
 create policy "Admins can delete reviews"
 on public.pending_reviews for delete
 to authenticated
-using (true);
+using (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid);
 
 drop policy if exists "Public can submit contact requests" on public.contact_requests;
 create policy "Public can submit contact requests"
@@ -138,20 +142,20 @@ drop policy if exists "Admins can read contact requests" on public.contact_reque
 create policy "Admins can read contact requests"
 on public.contact_requests for select
 to authenticated
-using (true);
+using (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid);
 
 drop policy if exists "Admins can update contact requests" on public.contact_requests;
 create policy "Admins can update contact requests"
 on public.contact_requests for update
 to authenticated
-using (true)
-with check (true);
+using (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid)
+with check (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid);
 
 drop policy if exists "Admins can delete contact requests" on public.contact_requests;
 create policy "Admins can delete contact requests"
 on public.contact_requests for delete
 to authenticated
-using (true);
+using (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid);
 
 drop policy if exists "Public can read Elky media" on storage.objects;
 create policy "Public can read Elky media"
@@ -163,19 +167,31 @@ drop policy if exists "Admins can upload Elky media" on storage.objects;
 create policy "Admins can upload Elky media"
 on storage.objects for insert
 to authenticated
-with check (bucket_id = 'elky-studios');
+with check (
+  bucket_id = 'elky-studios'
+  and auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid
+);
 
 drop policy if exists "Admins can update Elky media" on storage.objects;
 create policy "Admins can update Elky media"
 on storage.objects for update
 to authenticated
-using (bucket_id = 'elky-studios')
-with check (bucket_id = 'elky-studios');
+using (
+  bucket_id = 'elky-studios'
+  and auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid
+)
+with check (
+  bucket_id = 'elky-studios'
+  and auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid
+);
 
 drop policy if exists "Admins can delete Elky media" on storage.objects;
 create policy "Admins can delete Elky media"
 on storage.objects for delete
 to authenticated
-using (bucket_id = 'elky-studios');
+using (
+  bucket_id = 'elky-studios'
+  and auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid
+);
 
 commit;

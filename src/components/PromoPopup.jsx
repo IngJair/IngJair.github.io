@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useSiteContent } from '../context/useSiteContent';
 import { buildWhatsappLink } from '../utils/whatsappMessage';
 import './PromoPopup.css';

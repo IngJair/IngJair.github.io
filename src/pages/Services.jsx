@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSiteContent } from '../context/useSiteContent';
 import PageTransition from '../components/PageTransition';
@@ -390,7 +390,8 @@ export default function Services() {
       </section>
 
       {/* TESTIMONIOS */}
-      {content.reviews?.settings?.showOnServices !== false && (
+      {content.reviews?.settings?.showOnServices !== false
+        && (content.reviews?.published || []).length > 0 && (
         <section className="svc-testimonials section-padding" style={{ background: 'var(--surface-container-low)' }}>
           <div className="container">
             <ScrollReveal>
