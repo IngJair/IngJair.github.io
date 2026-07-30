@@ -43,17 +43,13 @@ export function HomePromoPopup() {
   const promos = content?.promos?.homePopup;
 
   useEffect(() => {
-    if (loadingContent) {
-      console.log("Popup waiting for content");
-      return;
-    }
+    if (loadingContent) return;
 
     if (!promos || !promos.enabled) {
       return;
     }
 
     const activeCards = (promos.cards || []).filter(c => c.active && c.showOnHomePopup !== false);
-    console.log("Popup available ads:", activeCards);
 
     if (activeCards.length === 0) {
       return;
@@ -61,7 +57,6 @@ export function HomePromoPopup() {
 
     const show = shouldShowPopup('home', promos.frequency || 'daily');
     if (!show) {
-      console.log("Popup blocked by frequency");
       return;
     }
 
@@ -73,14 +68,12 @@ export function HomePromoPopup() {
     }
     const max = promos.maxDisplayed || 4;
     const selected = cards.slice(0, max);
-    console.log("Popup selected ads:", selected);
 
     const delay = (promos.delaySeconds || 2) * 1000;
     const timer = setTimeout(() => {
       setShuffledCards(selected);
       setVisible(true);
       markPopupShown('home');
-      console.log("Popup shown");
     }, delay);
 
     return () => clearTimeout(timer);

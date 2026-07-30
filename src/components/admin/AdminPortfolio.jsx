@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useSiteContent } from '../../context/useSiteContent';
 import { EditableSection, EditableText, StyleMiniToolbar } from './EditorHelpers';
+import { pathFromUrl, useStorageUpload } from '../../lib/useStorageUpload';
 
 export default function AdminPortfolio() {
   const { content, update } = useSiteContent();
@@ -402,6 +403,13 @@ function GalleryEditor({ events, categories, years, onUpdate }) {
   const [activeCategory, setActiveCategory] = useState(categories[0] || '');
   const [selectedId, setSelectedId] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const {
+    uploadFile,
+    deleteFile,
+    uploading: modalUploading,
+    error: modalUploadError,
+    setError: setModalUploadError,
+  } = useStorageUpload();
 
   // Estados para el modal
   const [modalTitle, setModalTitle] = useState('');
@@ -410,6 +418,35 @@ function GalleryEditor({ events, categories, years, onUpdate }) {
   const [modalCover, setModalCover] = useState('');
 
   const categoryEvents = events.filter(e => e.category === activeCategory);
+
+  const closeCreateModal = async () => {
+    if (modalUploading) return;
+    const temporaryPath = pathFromUrl(modalCover);
+    if (temporaryPath) await deleteFile(modalCover);
+    setShowModal(false);
+    setModalTitle('');
+    setModalCover('');
+    setModalUploadError(null);
+  };
+
+  const handleModalCoverUpload = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    const url = await uploadFile(file, 'imagenes', modalCover);
+    if (url) setModalCover(url);
+  };
+
+  const handleDeleteEvent = async (event) => {
+    if (!confirm(`¿Eliminar "${event.title || 'este evento'}" y sus archivos del portafolio?`)) return;
+    const urls = [
+      event.coverImage,
+      ...(event.media || []).filter(item => item.type !== 'embed').map(item => item.src),
+    ].filter(url => pathFromUrl(url));
+    for (const url of urls) await deleteFile(url);
+    onUpdate(events.filter(item => item.id !== event.id));
+    if (selectedId === event.id) setSelectedId(null);
+  };
 
   const handleCreateEvent = () => {
     if (!modalTitle.trim() || !modalCat?.trim() || !modalCover?.trim()) {
@@ -429,7 +466,9 @@ function GalleryEditor({ events, categories, years, onUpdate }) {
     setActiveCategory(modalCat);
     setSelectedId(event.id);
     setShowModal(false);
-    setModalTitle(''); setModalCover('');
+    setModalTitle('');
+    setModalCover('');
+    setModalUploadError(null);
   };
 
   return (
@@ -531,11 +570,7 @@ function GalleryEditor({ events, categories, years, onUpdate }) {
                 event={event}
                 isSelected={selectedId === event.id}
                 onSelect={() => setSelectedId(selectedId === event.id ? null : event.id)}
-                onDelete={() => {
-                  if (!confirm('¿Eliminar este evento?')) return;
-                  onUpdate(events.filter(e => e.id !== event.id));
-                  if (selectedId === event.id) setSelectedId(null);
-                }}
+                onDelete={() => handleDeleteEvent(event)}
               />
             </Reorder.Item>
           ))}
@@ -596,7 +631,7 @@ function GalleryEditor({ events, categories, years, onUpdate }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               zIndex: 1000, padding: 24
             }}
-            onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}
+            onClick={e => { if (e.target === e.currentTarget) closeCreateModal(); }}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
@@ -612,7 +647,7 @@ function GalleryEditor({ events, categories, years, onUpdate }) {
                 <h3 style={{ fontSize: 18, fontWeight: 700, fontFamily: 'Playfair Display, serif', margin: 0 }}>
                   Nuevo evento
                 </h3>
-                <button onClick={() => setShowModal(false)}
+                <button onClick={closeCreateModal}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa' }}>
                   <span className="material-symbols-outlined" style={{ fontSize: 22 }}>close</span>
                 </button>
@@ -632,18 +667,23 @@ function GalleryEditor({ events, categories, years, onUpdate }) {
                   ? <img src={modalCover} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   : <div style={{ height: '100%', display: 'flex', flexDirection: 'column',
                       alignItems: 'center', justifyContent: 'center', gap: 8, color: '#aaa' }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 36 }}>add_photo_alternate</span>
-                      <span style={{ fontSize: 13 }}>Subir foto de portada * (Requerido)</span>
+                      <span className="material-symbols-outlined" style={{ fontSize: 36 }}>
+                        {modalUploading ? 'sync' : 'add_photo_alternate'}
+                      </span>
+                      <span style={{ fontSize: 13 }}>
+                        {modalUploading ? 'Subiendo a Supabase...' : 'Subir foto de portada * (Requerido)'}
+                      </span>
                     </div>
                 }
               </label>
-              <input id="modal-cover" type="file" accept="image/*" style={{ display: 'none' }}
-                onChange={e => {
-                  const file = e.target.files[0]; if (!file) return;
-                  const reader = new FileReader();
-                  reader.onload = ev => setModalCover(ev.target.result);
-                  reader.readAsDataURL(file);
-                }} />
+              <input id="modal-cover" type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}
+                disabled={modalUploading}
+                onChange={handleModalCoverUpload} />
+              {modalUploadError && (
+                <p style={{ margin: '-12px 0 16px', color: '#c62828', fontSize: 12 }}>
+                  {modalUploadError}
+                </p>
+              )}
 
               {/* Campos en grid */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
@@ -691,23 +731,23 @@ function GalleryEditor({ events, categories, years, onUpdate }) {
 
               {/* Botones */}
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => setShowModal(false)}
+                <button onClick={closeCreateModal}
                   style={{ flex: 1, padding: '11px', border: '1px solid #e0e0e0',
                     background: '#fff', borderRadius: 8, cursor: 'pointer',
                     fontSize: 13, fontWeight: 600, color: '#555' }}>
                   Cancelar
                 </button>
                 <button
-                  disabled={!modalTitle.trim() || !modalCat?.trim() || !modalCover?.trim()}
+                  disabled={modalUploading || !modalTitle.trim() || !modalCat?.trim() || !modalCover?.trim()}
                   onClick={handleCreateEvent}
                   style={{
                     flex: 2, padding: '11px', border: 'none',
-                    background: (modalTitle.trim() && modalCat?.trim() && modalCover?.trim()) ? '#0a0a0a' : '#e0e0e0',
-                    color: (modalTitle.trim() && modalCat?.trim() && modalCover?.trim()) ? '#fff' : '#aaa',
-                    borderRadius: 8, cursor: (modalTitle.trim() && modalCat?.trim() && modalCover?.trim()) ? 'pointer' : 'not-allowed',
+                    background: (!modalUploading && modalTitle.trim() && modalCat?.trim() && modalCover?.trim()) ? '#0a0a0a' : '#e0e0e0',
+                    color: (!modalUploading && modalTitle.trim() && modalCat?.trim() && modalCover?.trim()) ? '#fff' : '#aaa',
+                    borderRadius: 8, cursor: (!modalUploading && modalTitle.trim() && modalCat?.trim() && modalCover?.trim()) ? 'pointer' : 'not-allowed',
                     fontSize: 13, fontWeight: 700, transition: 'all 0.15s'
                   }}>
-                  Crear evento
+                  {modalUploading ? 'Subiendo...' : 'Crear evento'}
                 </button>
               </div>
             </motion.div>
@@ -720,23 +760,51 @@ function GalleryEditor({ events, categories, years, onUpdate }) {
 
 function EventMediaEditor({ event, categories, years, onUpdate, onUpdateMedia }) {
   const [youtubeUrl, setYoutubeUrl] = useState('');
+  const { uploadFile, deleteFile, uploading, error, setError } = useStorageUpload();
 
-  const handleCoverUpload = (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => onUpdate('coverImage', ev.target.result);
-    reader.readAsDataURL(file);
+  const handleCoverUpload = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const url = await uploadFile(file, 'imagenes', event.coverImage);
+    if (url) onUpdate('coverImage', url);
   };
 
-  const handleMediaUpload = (e) => {
-    Array.from(e.target.files).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = ev => {
-        const item = { id: Date.now() + Math.random(), type: file.type.startsWith('video/') ? 'video' : 'image', src: ev.target.result, alt: file.name, caption: '', captionStyle: { fontSize: '14px', bold: false, italic: false, color: '#ffffff' } };
-        onUpdateMedia([...(event.media || []), item]);
-      };
-      reader.readAsDataURL(file);
-    });
+  const handleMediaUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (files.length === 0) return;
+
+    const uploadedItems = [];
+    for (const file of files) {
+      const isVideo = file.type.startsWith('video/');
+      const url = await uploadFile(file, isVideo ? 'videos' : 'imagenes');
+      if (url) {
+        uploadedItems.push({
+          id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
+          type: isVideo ? 'video' : 'image',
+          src: url,
+          alt: file.name,
+          caption: '',
+          captionStyle: { fontSize: '14px', bold: false, italic: false, color: '#ffffff' },
+        });
+      }
+    }
+    if (uploadedItems.length > 0) {
+      onUpdateMedia([...(event.media || []), ...uploadedItems]);
+    }
+  };
+
+  const handleRemoveMedia = async (item) => {
+    const storagePath = pathFromUrl(item.src);
+    if (storagePath) {
+      const removed = await deleteFile(item.src);
+      if (!removed) {
+        setError('No se pudo eliminar el archivo. Intenta nuevamente.');
+        return;
+      }
+    }
+    onUpdateMedia(event.media.filter(mediaItem => mediaItem.id !== item.id));
   };
 
   const addEmbed = () => {
@@ -790,17 +858,27 @@ function EventMediaEditor({ event, categories, years, onUpdate, onUpdateMedia })
                 <span className="material-symbols-outlined">add_photo_alternate</span>Subir portada
               </div>}
         </label>
-        <input id={`cover-${event.id}`} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCoverUpload} />
+        <input id={`cover-${event.id}`} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}
+          disabled={uploading} onChange={handleCoverUpload} />
       </div>
 
       <div>
         <label style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Galería de fotos y videos</label>
         <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
           <label htmlFor={`media-${event.id}`} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', border: '1px dashed #bf953f', borderRadius: 6, cursor: 'pointer', color: '#bf953f', fontSize: 12, fontWeight: 700 }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add_photo_alternate</span>Subir fotos/videos
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+              {uploading ? 'sync' : 'add_photo_alternate'}
+            </span>
+            {uploading ? 'Subiendo a Supabase...' : 'Subir fotos/videos'}
           </label>
-          <input id={`media-${event.id}`} type="file" accept="image/*,video/*" multiple style={{ display: 'none' }} onChange={handleMediaUpload} />
+          <input id={`media-${event.id}`} type="file" accept="image/jpeg,image/png,image/webp,video/mp4"
+            multiple style={{ display: 'none' }} disabled={uploading} onChange={handleMediaUpload} />
         </div>
+        {error && (
+          <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 6, background: '#ffebee', color: '#c62828', fontSize: 12 }}>
+            {error}
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
           <input style={{ flex: 1, padding: '8px 12px', border: '1px solid #e0e0e0', borderRadius: 6, fontSize: 12 }}
@@ -810,6 +888,9 @@ function EventMediaEditor({ event, categories, years, onUpdate, onUpdateMedia })
             + Agregar
           </button>
         </div>
+        <p style={{ margin: '-8px 0 14px', color: '#888', fontSize: 11 }}>
+          Las fotos se optimizan automáticamente. Para videos largos, usa YouTube o Vimeo para ahorrar almacenamiento y acelerar el sitio.
+        </p>
 
         {(event.media || []).length > 0 && (
           <Reorder.Group axis="y" values={event.media} onReorder={onUpdateMedia}
@@ -829,7 +910,7 @@ function EventMediaEditor({ event, categories, years, onUpdate, onUpdateMedia })
                     value={item.caption || ''}
                     onChange={e => onUpdateMedia(event.media.map(m => m.id === item.id ? { ...m, caption: e.target.value } : m))} />
                 </div>
-                <button onClick={() => onUpdateMedia(event.media.filter(m => m.id !== item.id))}
+                <button onClick={() => handleRemoveMedia(item)}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ddd', padding: 4 }}>
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
                 </button>

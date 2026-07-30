@@ -8,6 +8,7 @@ import AdminHome from '../components/admin/AdminHome';
 import AdminPortfolio from '../components/admin/AdminPortfolio';
 import AdminServices from '../components/admin/AdminServices';
 import AdminContact from '../components/admin/AdminContact';
+import AdminSettings from '../components/admin/AdminSettings';
 import ReviewsPanel from '../components/admin/ReviewsPanel';
 import PromosPanel from '../components/admin/PromosPanel';
 
@@ -26,7 +27,7 @@ const EDITOR_TABS = [
 export default function Admin() {
   const { hasUnsaved, save, reset } = useSiteContent();
   const [activePage, setActivePage] = useState('home');
-  const [saveToast, setSaveToast] = useState(false);
+  const [saveToast, setSaveToast] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
@@ -159,17 +160,28 @@ export default function Admin() {
   const handleSave = async () => {
     setIsSaving(true);
     const result = await save();
-    
-    // Pequeño delay artificial para feedback visual si es muy rápido
-    setTimeout(() => {
-      setIsSaving(false);
-      if (result && result.success) {
-        setSaveToast(true);
-        setTimeout(() => setSaveToast(false), 2500);
-      } else {
-        alert(result?.error || "Error al guardar. Verifique su conexión o almacenamiento.");
-      }
-    }, 400);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    setIsSaving(false);
+
+    if (result?.status === 'published') {
+      setSaveToast({ type: 'success', message: result.message || 'Cambios publicados correctamente.' });
+    } else if (result?.status === 'local-only') {
+      setSaveToast({ type: 'warning', message: result.error });
+    } else {
+      setSaveToast({ type: 'error', message: result?.error || 'No se pudo guardar.' });
+    }
+    setTimeout(() => setSaveToast(null), 5000);
+  };
+
+  const handleReset = async () => {
+    const result = await reset();
+    if (result?.status === 'cancelled') return;
+    if (result?.success) {
+      setSaveToast({ type: 'success', message: result.message });
+    } else {
+      setSaveToast({ type: 'error', message: result?.error || 'No se pudo restaurar.' });
+    }
+    setTimeout(() => setSaveToast(null), 5000);
   };
 
   useEffect(() => {
@@ -543,7 +555,7 @@ export default function Admin() {
         </div>
 
         <div className="admin-topbar__right">
-          <button className="admin-topbar__btn admin-topbar__btn--ghost" onClick={reset} title="Restaurar original">
+          <button className="admin-topbar__btn admin-topbar__btn--ghost" onClick={handleReset} title="Restaurar original">
             <span className="material-symbols-outlined">restart_alt</span>
             <span className="admin-topbar__btn-label">Reset</span>
           </button>
@@ -561,7 +573,7 @@ export default function Admin() {
               {isSaving ? 'sync' : (hasUnsaved ? 'save' : 'check_circle')}
             </span>
             <span className="admin-topbar__btn-label">
-              {isSaving ? 'Guardando...' : (hasUnsaved ? 'Guardar' : 'Guardado')}
+              {isSaving ? 'Publicando...' : (hasUnsaved ? 'Guardar' : 'Publicado')}
             </span>
           </button>
           <button
@@ -584,13 +596,15 @@ export default function Admin() {
       {/* TOAST DE GUARDADO */}
       <AnimatePresence>
         {saveToast && (
-          <motion.div className="admin-toast"
+          <motion.div className={`admin-toast admin-toast--${saveToast.type}`}
             initial={{ opacity: 0, y: -20, x: '-50%' }}
             animate={{ opacity: 1, y: 0, x: '-50%' }}
             exit={{ opacity: 0, y: -20, x: '-50%' }}
           >
-            <span className="material-symbols-outlined">check_circle</span>
-            ¡Guardado correctamente!
+            <span className="material-symbols-outlined">
+              {saveToast.type === 'success' ? 'cloud_done' : saveToast.type === 'warning' ? 'cloud_off' : 'error'}
+            </span>
+            {saveToast.message}
           </motion.div>
         )}
       </AnimatePresence>
@@ -611,73 +625,7 @@ export default function Admin() {
           {activePage === 'contact' && <AdminContact />}
           { activePage === 'reviews' && <ReviewsPanel /> }
           { activePage === 'promos' && <PromosPanel /> }
-          {activePage === 'config' && (
-            <div style={{ padding: 24 }}>
-              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 24 }}>
-                Configuración del Admin
-              </h2>
-              
-              <div style={{
-                maxWidth: 500,
-                padding: 24,
-                background: '#fff',
-                border: '2px solid #e0e0e0',
-                borderRadius: 12
-              }}>
-                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
-                  Cuenta administrativa
-                </h3>
-                <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>
-                  La sesión está protegida mediante Supabase Auth.
-                </p>
-                
-                <label style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#888',
-                  textTransform: 'uppercase',
-                  display: 'block',
-                  marginBottom: 6
-                }}>
-                  Correo autenticado
-                </label>
-                <input
-                  type="email"
-                  value={authenticatedEmail}
-                  disabled
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: 8,
-                    fontSize: 14,
-                    boxSizing: 'border-box',
-                    marginBottom: 12,
-                    background: '#f5f5f5',
-                    color: '#999'
-                  }}
-                />
-                
-                <div style={{
-                  padding: 12,
-                  background: '#fff3e0',
-                  border: '1px solid #ffb74d',
-                  borderRadius: 8,
-                  fontSize: 12,
-                  color: '#e65100',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 8
-                }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>warning</span>
-                  <div>
-                    <strong>Importante:</strong> Los usuarios y las contraseñas se administran
-                    desde Authentication → Users en el panel de Supabase.
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {activePage === 'config' && <AdminSettings authenticatedEmail={authenticatedEmail} />}
         </motion.div>
       </AnimatePresence>
     </div>

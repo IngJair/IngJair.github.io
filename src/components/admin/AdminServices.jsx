@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useSiteContent } from '../../context/useSiteContent';
 import { EditableSection, EditableText } from './EditorHelpers';
+import ImageUploadZone from './ImageUploadZone';
 
 export default function AdminServices() {
   const { content, update } = useSiteContent();
@@ -316,21 +317,12 @@ function BasePackagesEditor({ packages, onUpdate }) {
 
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Imagen del paquete</label>
-            <label htmlFor={`pkg-img-${pkg.id}`} style={{ display: 'block', cursor: 'pointer', border: '2px dashed #e0e0e0', borderRadius: 6, overflow: 'hidden', height: 100 }}>
-              {pkg.image
-                ? <img src={pkg.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#aaa', fontSize: 13 }}>
-                    <span className="material-symbols-outlined">add_photo_alternate</span>Subir imagen
-                  </div>
-              }
-            </label>
-            <input id={`pkg-img-${pkg.id}`} type="file" accept="image/*" style={{ display: 'none' }}
-              onChange={e => {
-                const file = e.target.files[0]; if (!file) return;
-                const reader = new FileReader();
-                reader.onload = ev => updatePkg(i, 'image', ev.target.result);
-                reader.readAsDataURL(file);
-              }} />
+            <ImageUploadZone
+              currentUrl={pkg.image || ''}
+              onUploaded={url => updatePkg(i, 'image', url)}
+              label="Subir imagen del paquete"
+              aspectRatio="5/1"
+            />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
@@ -705,38 +697,12 @@ function CategoryPackageEditor({ categoryName, basePackages, override, onUpdate 
                         textTransform:'uppercase', display:'block', marginBottom:4 }}>
                         Imagen para {categoryName} (opcional)
                       </label>
-                      <label htmlFor={`cat-img-${pkg.id}-${categoryName}`}
-                        style={{ display:'block', cursor:'pointer',
-                          border:'2px dashed #e0e0e0', borderRadius:6,
-                          overflow:'hidden', height:80 }}>
-                        {pkgOvr.image
-                          ? <img src={pkgOvr.image}
-                              style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-                          : <div style={{ height:'100%', display:'flex',
-                              alignItems:'center', justifyContent:'center',
-                              gap:8, color:'#aaa', fontSize:12 }}>
-                              <span className="material-symbols-outlined" style={{ fontSize:18 }}>
-                                add_photo_alternate
-                              </span>
-                              Imagen específica para {categoryName}
-                            </div>
-                        }
-                      </label>
-                      <input id={`cat-img-${pkg.id}-${categoryName}`}
-                        type="file" accept="image/*" style={{ display:'none' }}
-                        onChange={e => {
-                          const file = e.target.files[0]; if (!file) return
-                          const reader = new FileReader()
-                          reader.onload = ev => updatePkgOverride(pkg.id, 'image', ev.target.result)
-                          reader.readAsDataURL(file)
-                        }} />
-                      {pkgOvr.image && (
-                        <button onClick={() => updatePkgOverride(pkg.id, 'image', '')}
-                          style={{ fontSize:11, color:'#e57373', background:'none',
-                            border:'none', cursor:'pointer', marginTop:4, padding:0 }}>
-                          × Quitar imagen
-                        </button>
-                      )}
+                      <ImageUploadZone
+                        currentUrl={pkgOvr.image || ''}
+                        onUploaded={url => updatePkgOverride(pkg.id, 'image', url)}
+                        label={`Imagen específica para ${categoryName}`}
+                        aspectRatio="5/1"
+                      />
                     </div>
 
                     {/* Características de esta categoría */}
@@ -898,20 +864,14 @@ function CategoryPackageEditor({ categoryName, basePackages, override, onUpdate 
               </button>
             </div>
 
-            <label htmlFor={`extra-img-${pkg.id}`} style={{ display: 'block', cursor: 'pointer', border: '2px dashed #e8d9b5', borderRadius: 6, overflow: 'hidden', height: 80, marginBottom: 12 }}>
-              {pkg.image
-                ? <img src={pkg.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#bf953f', fontSize: 12 }}>
-                    <span className="material-symbols-outlined">add_photo_alternate</span>Imagen del paquete
-                  </div>}
-            </label>
-            <input id={`extra-img-${pkg.id}`} type="file" accept="image/*" style={{ display: 'none' }}
-              onChange={e => {
-                const file = e.target.files[0]; if (!file) return;
-                const reader = new FileReader();
-                reader.onload = ev => updateExtraPkg(i, 'image', ev.target.result);
-                reader.readAsDataURL(file);
-              }} />
+            <div style={{ marginBottom: 12 }}>
+              <ImageUploadZone
+                currentUrl={pkg.image || ''}
+                onUploaded={url => updateExtraPkg(i, 'image', url)}
+                label="Imagen del paquete"
+                aspectRatio="5/1"
+              />
+            </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
               <div>

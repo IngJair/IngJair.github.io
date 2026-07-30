@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase';
 import { SiteContentContext } from './useSiteContent';
 
 const CONTENT_LOAD_TIMEOUT_MS = 4000;
+const LOCAL_HISTORY_KEY = 'elky_content_history';
+const MAX_LOCAL_VERSIONS = 10;
 
 function withTimeout(promise, timeoutMs = CONTENT_LOAD_TIMEOUT_MS) {
   let timeoutId;
@@ -12,6 +14,38 @@ function withTimeout(promise, timeoutMs = CONTENT_LOAD_TIMEOUT_MS) {
 
   return Promise.race([Promise.resolve(promise), timeout])
     .finally(() => clearTimeout(timeoutId));
+}
+
+function readLocalVersions() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(LOCAL_HISTORY_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalVersion(data, reason = 'Copia automática') {
+  if (!data || typeof data !== 'object') return;
+  try {
+    const serializedData = JSON.stringify(data);
+    const versions = readLocalVersions();
+    if (versions[0]?.serializedData === serializedData) return;
+
+    const nextVersion = {
+      id: `local-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      reason,
+      source: 'local',
+      serializedData,
+    };
+    localStorage.setItem(
+      LOCAL_HISTORY_KEY,
+      JSON.stringify([nextVersion, ...versions].slice(0, MAX_LOCAL_VERSIONS))
+    );
+  } catch (error) {
+    console.warn('[Backup] No se pudo crear la copia local:', error.message);
+  }
 }
 
 const defaultContent = {
@@ -441,7 +475,6 @@ export function SiteContentProvider({ children }) {
       let supabaseError;
 
       try {
-        console.log('[Sync] Loading from Supabase...');
         const result = await withTimeout(
           supabase
             .from('site_content')
@@ -459,7 +492,6 @@ export function SiteContentProvider({ children }) {
 
       // ─── CASO A: Supabase tiene datos → usarlos directamente ────────────
       if (supabaseOk && supabaseData?.data) {
-        console.log('[Sync] ✅ Loaded from Supabase');
         setContent(mergeContent(supabaseData.data));
         setIsLoading(false);
         return;
@@ -471,13 +503,11 @@ export function SiteContentProvider({ children }) {
         if (localRaw) {
           try {
             const localParsed = JSON.parse(localRaw);
-            console.log('[Sync] Migrating local content to Supabase...');
             const { error: upsertError } = await supabase
               .from('site_content')
               .upsert({ id: 'main', data: localParsed, updated_at: new Date().toISOString() });
 
             if (!upsertError) {
-              console.log('[Sync] ✅ Migration successful — now using Supabase');
               setContent(mergeContent(localParsed));
               // Marcar como migrado para no volver a depender de localStorage
               localStorage.setItem('luxe_migrated_to_supabase', 'true');
@@ -488,9 +518,6 @@ export function SiteContentProvider({ children }) {
           } catch (e) {
             console.warn('[Sync] Migration parse error:', e.message);
           }
-        } else {
-          // Supabase vacío y localStorage vacío → usar defaultContent (primer arranque)
-          console.log('[Sync] Fresh start — no saved content anywhere');
         }
         setIsLoading(false);
         return;
@@ -502,7 +529,6 @@ export function SiteContentProvider({ children }) {
         const saved = localStorage.getItem('luxe_content');
         if (saved) {
           setContent(mergeContent(JSON.parse(saved)));
-          console.log('[Sync] ⚠️ Loaded from localStorage (offline mode)');
         }
       } catch (e) {
         console.error('[Sync] localStorage fallback error:', e);
@@ -535,13 +561,21 @@ export function SiteContentProvider({ children }) {
         status: 'pending',
       }]);
       if (error) throw error;
+      return { success: true, review: newReview };
     } catch {
-      // Fallback: localStorage
-      const pending = JSON.parse(localStorage.getItem('luxe_pending_reviews') || '[]');
-      pending.push(newReview);
-      localStorage.setItem('luxe_pending_reviews', JSON.stringify(pending));
+      try {
+        const pending = JSON.parse(localStorage.getItem('luxe_pending_reviews') || '[]');
+        pending.push(newReview);
+        localStorage.setItem('luxe_pending_reviews', JSON.stringify(pending));
+      } catch (storageError) {
+        console.warn('[Reviews] No se pudo crear respaldo local:', storageError.message);
+      }
+      return {
+        success: false,
+        review: newReview,
+        error: 'No se pudo enviar la reseña. Revisa tu conexión e intenta nuevamente.',
+      };
     }
-    return newReview;
   }, []);
 
   // Cargar reseñas pendientes (para el editor)
@@ -695,67 +729,198 @@ export function SiteContentProvider({ children }) {
     setHasUnsaved(true);
   }, [syncCategoryOverrides]);
 
-  const save = useCallback(async () => {
-    // 1. Intentar guardar en Supabase
-    try {
-      const { error } = await supabase
-        .from('site_content')
-        .upsert({ id: 'main', data: content, updated_at: new Date().toISOString() });
+  const replaceContent = useCallback((nextContent) => {
+    if (!nextContent || typeof nextContent !== 'object' || Array.isArray(nextContent)) {
+      return { success: false, error: 'El respaldo no contiene una configuración válida.' };
+    }
+    setContent(mergeContent(nextContent));
+    setHasUnsaved(true);
+    return { success: true };
+  }, []);
 
-      if (!error) {
-        console.log("Save content success");
-        // Espejo en localStorage por si Supabase no está disponible la próxima carga
-        try {
-          localStorage.setItem('luxe_content', JSON.stringify(content));
-        } catch (storageError) {
-          console.warn('[localStorage] No se pudo actualizar el respaldo:', storageError);
-        }
-        setHasUnsaved(false);
-        return { success: true };
-      }
-      console.warn('[Supabase] Error al guardar:', error.message);
-    } catch (e) {
-      console.warn('[Supabase] Error de red al guardar:', e.message);
+  const createRemoteVersion = useCallback(async (data, reason) => {
+    if (!data || typeof data !== 'object') return;
+    const { error } = await supabase
+      .from('site_content_versions')
+      .insert({ content_id: 'main', data, reason });
+    if (error) {
+      console.warn('[Backup] No se pudo crear la copia remota:', error.message);
+      return;
     }
 
-    // 2. Fallback: localStorage
-    try {
-      console.log("Save content success");
-      localStorage.setItem('luxe_content', JSON.stringify(content));
-      setHasUnsaved(false);
-      return { success: true };
-    } catch (e) {
-      console.error('[localStorage] Error al guardar:', e);
-      return { success: false, error: 'Almacenamiento lleno. Reduce el contenido del portafolio.' };
-    }
-  }, [content]);
-
-  const reset = useCallback(async () => {
-    if (confirm('¿Restaurar todo el contenido original?')) {
-      setContent(defaultContent);
-      localStorage.removeItem('luxe_content');
-      setHasUnsaved(false);
-      // También borrar en Supabase (upsert con default)
-      try {
-        await supabase
-          .from('site_content')
-          .upsert({ id: 'main', data: defaultContent, updated_at: new Date().toISOString() });
-      } catch (e) {
-        console.warn('[Supabase] reset fallback silencioso:', e.message);
+    const { data: excessVersions, error: listError } = await supabase
+      .from('site_content_versions')
+      .select('id')
+      .eq('content_id', 'main')
+      .order('created_at', { ascending: false })
+      .range(30, 99);
+    if (!listError && excessVersions?.length) {
+      const { error: pruneError } = await supabase
+        .from('site_content_versions')
+        .delete()
+        .in('id', excessVersions.map(version => version.id));
+      if (pruneError) {
+        console.warn('[Backup] No se pudo depurar el historial antiguo:', pruneError.message);
       }
     }
   }, []);
+
+  const getContentVersions = useCallback(async () => {
+    const localVersions = readLocalVersions().flatMap(version => {
+      try {
+        return [{
+          ...version,
+          data: version.data || JSON.parse(version.serializedData),
+        }];
+      } catch {
+        return [];
+      }
+    });
+
+    try {
+      const { data, error } = await supabase
+        .from('site_content_versions')
+        .select('id, data, reason, created_at')
+        .eq('content_id', 'main')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+
+      const remoteVersions = (data || []).map(version => ({
+        id: `remote-${version.id}`,
+        remoteId: version.id,
+        createdAt: version.created_at,
+        reason: version.reason || 'Copia automática',
+        source: 'Supabase',
+        data: version.data,
+      }));
+
+      return [...remoteVersions, ...localVersions]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 20);
+    } catch (error) {
+      console.warn('[Backup] Historial remoto no disponible:', error.message);
+      return localVersions;
+    }
+  }, []);
+
+  const restoreContentVersion = useCallback((version) => {
+    const versionData = version?.data
+      || (version?.serializedData ? JSON.parse(version.serializedData) : null);
+    return replaceContent(versionData);
+  }, [replaceContent]);
+
+  const save = useCallback(async () => {
+    let remoteError;
+
+    // 1. Respaldar la versión publicada y guardar en Supabase.
+    try {
+      const { data: currentRow, error: readError } = await supabase
+        .from('site_content')
+        .select('data')
+        .eq('id', 'main')
+        .maybeSingle();
+      if (readError) throw readError;
+
+      if (currentRow?.data) {
+        saveLocalVersion(currentRow.data, 'Antes de guardar');
+        await createRemoteVersion(currentRow.data, 'Antes de guardar');
+      }
+
+      const { error: saveError } = await supabase
+        .from('site_content')
+        .upsert({ id: 'main', data: content, updated_at: new Date().toISOString() });
+      if (saveError) throw saveError;
+
+      try {
+        localStorage.setItem('luxe_content', JSON.stringify(content));
+      } catch (storageError) {
+        console.warn('[localStorage] No se pudo actualizar el respaldo:', storageError);
+      }
+
+      setHasUnsaved(false);
+      return {
+        success: true,
+        status: 'published',
+        message: 'Cambios publicados correctamente.',
+      };
+    } catch (error) {
+      remoteError = error;
+      console.warn('[Supabase] No se pudo publicar:', error.message);
+    }
+
+    // 2. Conservar una copia local, sin afirmar que el cambio fue publicado.
+    try {
+      localStorage.setItem('luxe_content', JSON.stringify(content));
+      setHasUnsaved(true);
+      return {
+        success: false,
+        status: 'local-only',
+        error: `No se pudo publicar en Supabase. Hay una copia temporal en este dispositivo. Reintenta cuando tengas conexión.${remoteError?.message ? ` Detalle: ${remoteError.message}` : ''}`,
+      };
+    } catch (error) {
+      console.error('[localStorage] Error al guardar:', error);
+      setHasUnsaved(true);
+      return {
+        success: false,
+        status: 'failed',
+        error: 'No se pudo publicar ni crear una copia local. Revisa la conexión y el espacio disponible.',
+      };
+    }
+  }, [content, createRemoteVersion]);
+
+  const reset = useCallback(async () => {
+    const confirmation = prompt(
+      'Esta acción reemplazará todo el contenido actual.\n\nEscribe RESTAURAR para continuar:'
+    );
+    if (confirmation !== 'RESTAURAR') {
+      return { success: false, status: 'cancelled' };
+    }
+
+    saveLocalVersion(content, 'Antes de restaurar valores iniciales');
+    await createRemoteVersion(content, 'Antes de restaurar valores iniciales');
+
+    try {
+      const { error } = await supabase
+        .from('site_content')
+        .upsert({ id: 'main', data: defaultContent, updated_at: new Date().toISOString() });
+      if (error) throw error;
+
+      setContent(structuredClone(defaultContent));
+      try {
+        localStorage.setItem('luxe_content', JSON.stringify(defaultContent));
+      } catch (storageError) {
+        console.warn('[localStorage] No se pudo actualizar el respaldo:', storageError.message);
+      }
+      setHasUnsaved(false);
+      return {
+        success: true,
+        status: 'published',
+        message: 'Contenido inicial restaurado. La versión anterior quedó respaldada.',
+      };
+    } catch (error) {
+      console.warn('[Supabase] No se pudo restaurar:', error.message);
+      return {
+        success: false,
+        status: 'failed',
+        error: 'No se restauró el sitio porque Supabase no confirmó la operación.',
+      };
+    }
+  }, [content, createRemoteVersion]);
 
   return (
     <SiteContentContext.Provider value={{ 
       content, 
       update, 
       updateContent: update, // Aliased for compatibility
+      replaceContent,
       save, 
       hasUnsaved,
       isLoading,
       loadingContent: isLoading,
       reset,
+      getContentVersions,
+      restoreContentVersion,
       submitReview,
       getPendingReviews,
       publishReview,

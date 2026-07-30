@@ -127,7 +127,12 @@
   box-shadow: 0 10px 40px rgba(0,0,0,0.4);
   border: 1px solid rgba(255,255,255,0.1);
 }
-.admin-toast .material-symbols-outlined { color: #4caf50; font-size: 20px; }
+.admin-toast .material-symbols-outlined { font-size: 20px; }
+.admin-toast--success .material-symbols-outlined { color: #4caf50; }
+.admin-toast--warning { border-color: #ffb74d; max-width: min(560px, calc(100vw - 32px)); }
+.admin-toast--warning .material-symbols-outlined { color: #ffb74d; }
+.admin-toast--error { border-color: #ef5350; max-width: min(560px, calc(100vw - 32px)); }
+.admin-toast--error .material-symbols-outlined { color: #ef5350; }
 
 /* CONTENIDO — ocupa TODO el ancho */
 .admin-page-content {

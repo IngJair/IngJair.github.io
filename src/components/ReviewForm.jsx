@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useSiteContent } from '../context/useSiteContent';
+import { optimizeImage } from '../lib/useStorageUpload';
 import './ReviewForm.css';
 
 export default function ReviewForm({ onClose, embedded = false }) {
@@ -24,16 +25,29 @@ export default function ReviewForm({ onClose, embedded = false }) {
     .filter(c => c !== 'Todos')
     .concat(['Otro']);
 
-  const handlePhotoUpload = (e) => {
-    const file = e.target.files[0];
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      setErrors(prev => ({ ...prev, photo: 'La foto no debe superar 5MB' }));
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setErrors(prev => ({ ...prev, photo: 'Usa una imagen JPG, PNG o WebP.' }));
       return;
     }
+    if (file.size > 10 * 1024 * 1024) {
+      setErrors(prev => ({ ...prev, photo: 'La foto no debe superar 10 MB.' }));
+      return;
+    }
+
+    const optimized = await optimizeImage(file, { maxDimension: 640, maxBytes: 300 * 1024 });
+    if (!optimized) {
+      setErrors(prev => ({ ...prev, photo: 'No se pudo optimizar la fotografía.' }));
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = ev => setForm(prev => ({ ...prev, photo: ev.target.result }));
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(optimized);
+    setErrors(prev => ({ ...prev, photo: null }));
   };
 
   const validate = () => {
@@ -48,11 +62,11 @@ export default function ReviewForm({ onClose, embedded = false }) {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
-    
+
+    setErrors({});
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1000)); // Simula envío
-    
-    submitReview({
+
+    const result = await submitReview({
       name: form.name.trim(),
       eventType: form.eventType,
       event: form.event.trim() || form.eventType,
@@ -62,7 +76,14 @@ export default function ReviewForm({ onClose, embedded = false }) {
     });
     
     setLoading(false);
-    setSubmitted(true);
+    if (result?.success) {
+      setSubmitted(true);
+    } else {
+      setErrors(prev => ({
+        ...prev,
+        submit: result?.error || 'No se pudo enviar la reseña.',
+      }));
+    }
   };
 
   // PANTALLA DE ÉXITO
@@ -186,7 +207,7 @@ export default function ReviewForm({ onClose, embedded = false }) {
             <input
               id="review-photo"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               style={{ display: 'none' }}
               onChange={handlePhotoUpload}
             />
@@ -240,6 +261,8 @@ export default function ReviewForm({ onClose, embedded = false }) {
           <span className="material-symbols-outlined">info</span>
           Tu reseña será revisada antes de publicarse. Normalmente se aprueba en 24-48 horas.
         </p>
+
+        {errors.submit && <p className="review-form__error">{errors.submit}</p>}
 
         <button
           type="submit"

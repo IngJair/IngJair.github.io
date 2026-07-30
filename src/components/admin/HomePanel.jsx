@@ -14,10 +14,7 @@ export default function HomePanel() {
             <AdminField label="Imagen para PC / Desktop (Recomendado: 1920×1080 o 1600×900)">
               <ImageUploadZone
                 currentUrl={hero.backgroundImage}
-                onUploaded={url => {
-                  console.log("Updating hero.backgroundImage:", url);
-                  update('hero.backgroundImage', url);
-                }}
+                onUploaded={url => update('hero.backgroundImage', url)}
                 folder="imagenes"
                 label="Click para subir imagen de PC (1920×1080)"
                 aspectRatio="16/9"
@@ -29,10 +26,7 @@ export default function HomePanel() {
             <AdminField label="Imagen para móvil / Celular (Recomendado: 1080×1920 o 900×1600)">
               <ImageUploadZone
                 currentUrl={hero.mobileBackgroundImage}
-                onUploaded={url => {
-                  console.log("Updating hero.mobileBackgroundImage:", url);
-                  update('hero.mobileBackgroundImage', url);
-                }}
+                onUploaded={url => update('hero.mobileBackgroundImage', url)}
                 folder="imagenes"
                 label="Click para subir imagen móvil (1080×1920)"
                 aspectRatio="9/16"

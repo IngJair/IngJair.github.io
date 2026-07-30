@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { useStorageUpload } from '../../lib/useStorageUpload';
+import { pathFromUrl, useStorageUpload } from '../../lib/useStorageUpload';
 
 /**
  * Zona reutilizable para subir imágenes o videos con vista previa y estado de carga.
@@ -11,8 +11,9 @@ export default function ImageUploadZone({
   label = 'Subir imagen',
   aspectRatio = '16/9',
   isHero = false,
+  allowRemove = true,
 }) {
-  const { uploadFile, uploading, error, setError } = useStorageUpload();
+  const { uploadFile, deleteFile, uploading, error, setError } = useStorageUpload();
   const reactId = useId();
   const inputId = `upload-${folder}-${reactId.replace(/:/g, '')}`;
 
@@ -26,6 +27,20 @@ export default function ImageUploadZone({
       if (isHero) console.info('[Storage] Imagen principal actualizada.');
       onUploaded(url);
     }
+  };
+
+  const handleRemove = async () => {
+    if (!currentUrl || uploading) return;
+    setError(null);
+    const storagePath = pathFromUrl(currentUrl);
+    if (storagePath) {
+      const removed = await deleteFile(currentUrl);
+      if (!removed) {
+        setError('No se pudo eliminar el archivo. Intenta nuevamente.');
+        return;
+      }
+    }
+    onUploaded('');
   };
 
   return (
@@ -59,6 +74,25 @@ export default function ImageUploadZone({
         onChange={handleChange}
         disabled={uploading}
       />
+      {allowRemove && currentUrl && (
+        <button
+          type="button"
+          onClick={handleRemove}
+          disabled={uploading}
+          style={{
+            alignSelf: 'flex-start',
+            padding: 0,
+            background: 'none',
+            border: 'none',
+            color: '#c62828',
+            fontSize: 11,
+            fontWeight: 700,
+            cursor: uploading ? 'wait' : 'pointer',
+          }}
+        >
+          × Quitar archivo
+        </button>
+      )}
       {error && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 6,
