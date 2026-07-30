@@ -210,8 +210,8 @@ const defaultContent = {
     subtitleStyle: { fontSize: '16px', bold: false, italic: false, underline: false, color: 'rgba(255,255,255,0.7)' },
   },
   contact: {
-    whatsapp: "+34 600 000 000",
-    whatsappLink: "https://wa.me/34600000000",
+    whatsapp: "+51 978 752 237",
+    whatsappLink: "https://wa.me/51978752237",
     whatsappMessageTemplate: `Hola! Me interesa el siguiente paquete:
 
 Paquete: {{paquete}}
@@ -221,9 +221,9 @@ Incluye:
 Precio: {{precio}}
 
 Podrias darme mas informacion?`,
-    email: "hello@luxemedia.art",
-    instagram: "@luxemedia_artistry",
-    instagramLink: "https://instagram.com/luxemedia_artistry",
+    email: "elky.javier2@gmail.com",
+    instagram: "",
+    instagramLink: "",
     facebook: "",
     facebookLink: "",
     tiktok: "",
@@ -257,7 +257,7 @@ Podrias darme mas informacion?`,
   },
   footer: {
     tagline: "Elevando la cinematografía de eventos a un estándar de alta costura.",
-    copyright: "2024 ELKY STUDIOS. ALL RIGHTS RESERVED."
+    copyright: "ELKY STUDIOS. TODOS LOS DERECHOS RESERVADOS."
   },
   portfolio: {
     hero: {
@@ -386,6 +386,10 @@ function mergeContent(parsed) {
       },
       basePackages: parsed.services?.basePackages || defaultContent.services.basePackages,
       categoryOverrides: parsed.services?.categoryOverrides || defaultContent.services.categoryOverrides,
+    },
+    contact: {
+      ...defaultContent.contact,
+      ...(parsed.contact || {}),
     },
     calendar: {
       ...defaultContent.calendar,

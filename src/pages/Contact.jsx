@@ -183,7 +183,7 @@ export default function Contact() {
     }
 
     // 2. Generar mensaje WhatsApp
-    const whatsappNumber = (contactInfo.whatsapp || '+34600000000').replace(/[^0-9]/g, '');
+    const whatsappNumber = (contactInfo.whatsapp || '+51978752237').replace(/[^0-9]/g, '');
     const message = `
 🎬 *NUEVA SOLICITUD DE EVENTO*
 ━━━━━━━━━━━━━━━━━━━━━
@@ -360,20 +360,20 @@ _Enviado desde el sitio web de Elky Studio_
         >
           <h3 className="text-headline-md contact-info__title">Información Directa</h3>
           <div className="contact-info__items">
-            <a href={`https://wa.me/${(contactInfo.whatsapp || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent('Hola, me gustaría consultar sobre vuestros servicios fotográficos.')}`}
+            <a href={`https://wa.me/${(contactInfo.whatsapp || '+51978752237').replace(/[^0-9]/g, '')}?text=${encodeURIComponent('Hola, me gustaría consultar sobre sus servicios de fotografía y video.')}`}
                target="_blank" rel="noopener noreferrer" className="contact-info__item contact-info__item--link">
               <span className="material-symbols-outlined contact-info__icon">chat_bubble</span>
               <div>
                 <p className="text-label-sm contact-info__label">WhatsApp</p>
-                <p className="text-body-lg">{contactInfo.whatsapp || '+34 600 000 000'}</p>
+                <p className="text-body-lg">{contactInfo.whatsapp || '+51 978 752 237'}</p>
               </div>
               <span className="material-symbols-outlined contact-info__arrow">arrow_outward</span>
             </a>
-            <a href={`mailto:${contactInfo.email || 'contacto@elkystudios.com'}`} className="contact-info__item contact-info__item--link">
+            <a href={`mailto:${contactInfo.email || 'elky.javier2@gmail.com'}`} className="contact-info__item contact-info__item--link">
               <span className="material-symbols-outlined contact-info__icon">mail</span>
               <div>
                 <p className="text-label-sm contact-info__label">Email</p>
-                <p className="text-body-lg">{contactInfo.email || 'contacto@elkystudios.com'}</p>
+                <p className="text-body-lg">{contactInfo.email || 'elky.javier2@gmail.com'}</p>
               </div>
               <span className="material-symbols-outlined contact-info__arrow">arrow_outward</span>
             </a>

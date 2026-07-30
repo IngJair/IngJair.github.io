@@ -5,7 +5,7 @@ export const BASE_PACKAGES = [
     title: 'Paquete Básico',
     subtitle: 'Esenciales de Calidad',
     basePrice: 800,
-    currency: '€',
+    currency: 'S/',
     isPrimary: false,
     features: [
       { text: '6 Horas de cobertura', included: true },
@@ -22,7 +22,7 @@ export const BASE_PACKAGES = [
     title: 'Paquete Premium',
     subtitle: 'Nuestra Recomendación',
     basePrice: 1500,
-    currency: '€',
+    currency: 'S/',
     isPrimary: true,
     features: [
       { text: '10 Horas de cobertura', included: true },
@@ -39,7 +39,7 @@ export const BASE_PACKAGES = [
     title: 'Paquete Full Evento',
     subtitle: 'Experiencia Completa',
     basePrice: 2800,
-    currency: '€',
+    currency: 'S/',
     isPrimary: false,
     features: [
       { text: 'Cobertura ilimitada', included: true },

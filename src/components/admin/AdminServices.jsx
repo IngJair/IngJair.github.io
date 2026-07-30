@@ -281,7 +281,7 @@ function BasePackagesEditor({ packages, onUpdate }) {
   const addPackage = () => {
     const newPkg = {
       id: `pkg-${Date.now()}`, title: 'Nuevo Paquete', subtitle: 'Descripción',
-      basePrice: 1000, currency: '€', isPrimary: false, image: '', features: ['Característica 1']
+      basePrice: 1000, currency: 'S/', isPrimary: false, image: '', features: ['Característica 1']
     };
     onUpdate([...packages, newPkg]);
   };
@@ -443,7 +443,7 @@ function CategoryPackageEditor({ categoryName, basePackages, override, onUpdate 
     const extras = override.extraPackages || [];
     const newPkg = {
       id: `extra-${Date.now()}`, title: 'Paquete Exclusivo', subtitle: `Solo para ${categoryName}`,
-      basePrice: 1200, currency: '€', isPrimary: false, image: '', features: ['Característica exclusiva']
+      basePrice: 1200, currency: 'S/', isPrimary: false, image: '', features: ['Característica exclusiva']
     };
     onUpdate({ ...override, extraPackages: [...extras, newPkg] });
   };

@@ -68,7 +68,7 @@ export default function Footer() {
 
       <div className="footer__bottom">
         <p className="text-label-sm" style={{ color: 'var(--on-surface)', opacity: 0.8, letterSpacing: '0.15em' }}>
-          © <span style={{ color: '#C8A96A' }}>ELKY STUDIOS</span>. ALL RIGHTS RESERVED.
+          © {new Date().getFullYear()} <span style={{ color: '#C8A96A' }}>ELKY STUDIOS</span>. TODOS LOS DERECHOS RESERVADOS.
         </p>
       </div>
     </footer>

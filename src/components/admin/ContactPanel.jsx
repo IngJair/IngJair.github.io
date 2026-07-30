@@ -8,11 +8,11 @@ export default function ContactPanel() {
   return (
     <AdminSection title="Información de Contacto" description="Estos datos aparecen en la página de Contact y el Footer">
       <div className="admin-row">
-        <AdminField label="Número WhatsApp (con código de país)" hint="Ej: +34600000000">
+        <AdminField label="Número WhatsApp (con código de país)" hint="Ej: +51978752237">
           <input className="admin-input" value={contact.whatsapp}
             onChange={e => updateContent('contact.whatsapp', e.target.value)} />
         </AdminField>
-        <AdminField label="Link WhatsApp completo" hint="https://wa.me/34600000000">
+        <AdminField label="Link WhatsApp completo" hint="https://wa.me/51978752237">
           <input className="admin-input" value={contact.whatsappLink}
             onChange={e => updateContent('contact.whatsappLink', e.target.value)} />
         </AdminField>

@@ -37,7 +37,7 @@ export default function ServicesPanel() {
       title: 'Nuevo Paquete',
       subtitle: 'Descripción corta',
       basePrice: 1000,
-      currency: '€',
+      currency: 'S/',
       isPrimary: false,
       features: ['Característica 1', 'Característica 2'],
     };

@@ -57,7 +57,7 @@ function ServiceCardEditor({ item, index, isEditing, onUpdate }) {
       setSubPanelType('services');
       setShowSubPanel(true);
     } else if (value === 'whatsapp') {
-      onUpdate(index, 'linkDestination', 'https://wa.me/34600000000');
+      onUpdate(index, 'linkDestination', 'https://wa.me/51978752237');
       setShowSubPanel(false);
       setSubPanelType(null);
     } else {

@@ -103,7 +103,7 @@ export function EditableLink({ value, onChange, isEditing, className = '', style
     { label: 'Portafolio', value: '/portfolio' },
     { label: 'Servicios', value: '/services' },
     { label: 'Contacto', value: '/contact' },
-    { label: 'WhatsApp (Directo)', value: 'https://wa.me/34600000000' }
+    { label: 'WhatsApp (Directo)', value: 'https://wa.me/51978752237' }
   ];
 
   if (!isEditing) {
