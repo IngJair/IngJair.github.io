@@ -16,6 +16,6 @@
   "vars": {
     "SUPABASE_ISSUER": "https://dtyhfmrqswonvxfjdakn.supabase.co/auth/v1",
     "ADMIN_USER_ID": "69770c28-7c21-4edb-8656-9198fbd02df4",
-    "ALLOWED_ORIGINS": "https://ingjair.github.io,https://elky-studios.docfanton.chatgpt.site,http://localhost:3000"
+    "ALLOWED_ORIGINS": "https://elkystudio.pages.dev,https://ingjair.github.io,https://elky-studios.docfanton.chatgpt.site,http://localhost:3000"
   }
 }

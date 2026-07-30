@@ -9,6 +9,7 @@
     "build": "vite build",
     "build:pages": "vite build --mode github-pages",
     "deploy:media": "wrangler deploy --config cloudflare/wrangler.media.jsonc",
+    "deploy:pages": "wrangler pages deploy --config wrangler.pages.jsonc --branch main",
     "lint": "eslint .",
     "preview": "vite preview"
   },

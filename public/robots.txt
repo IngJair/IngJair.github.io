@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin
 
-Sitemap: https://ingjair.github.io/sitemap.xml
+Sitemap: https://elkystudio.pages.dev/sitemap.xml

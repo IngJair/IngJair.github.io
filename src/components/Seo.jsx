@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router';
 import { useSiteContent } from '../context/useSiteContent';
 
-const SITE_URL = 'https://ingjair.github.io';
+const SITE_URL = 'https://elkystudio.pages.dev';
 const SOCIAL_IMAGE = `${SITE_URL}/elky-social-preview.png`;
 
 const PAGE_META = {

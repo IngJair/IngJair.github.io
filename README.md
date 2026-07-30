@@ -3,6 +3,8 @@
 Sitio web y panel de administración de Elky Studios, construido con React, Vite,
 Supabase y Cloudflare R2.
 
+Sitio público principal: <https://elkystudio.pages.dev>
+
 ## Desarrollo local
 
 1. Instala las dependencias con `npm install`.
