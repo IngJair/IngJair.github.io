@@ -578,12 +578,18 @@ export default function Admin() {
         </div>
 
         {/* TABS DE PÁGINAS DESKTOP */}
-        <nav className="admin-topbar__tabs admin-topbar__tabs--desktop">
+        <nav
+          className="admin-topbar__tabs admin-topbar__tabs--desktop"
+          aria-label="Secciones del administrador"
+        >
           {EDITOR_TABS.map(tab => (
             <button
               key={tab.id}
+              type="button"
               className={`admin-topbar__tab ${activePage === tab.id ? 'admin-topbar__tab--active' : ''} ${tab.id === 'reviews' && pendingCount > 0 ? 'admin-topbar__tab--badge' : ''}`}
               onClick={() => setActivePage(tab.id)}
+              aria-current={activePage === tab.id ? 'page' : undefined}
+              title={`Abrir ${tab.label}`}
             >
               <span className="material-symbols-outlined">{tab.icon}</span>
               <span>{tab.label}</span>
