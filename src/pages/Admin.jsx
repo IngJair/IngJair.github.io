@@ -25,7 +25,14 @@ const EDITOR_TABS = [
 ];
 
 export default function Admin() {
-  const { hasUnsaved, save, reset } = useSiteContent();
+  const {
+    hasUnsaved,
+    save,
+    isLoading: isContentLoading,
+    syncStatus,
+    syncError,
+    reloadContent,
+  } = useSiteContent();
   const [activePage, setActivePage] = useState('home');
   const [saveToast, setSaveToast] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -173,17 +180,6 @@ export default function Admin() {
     setTimeout(() => setSaveToast(null), 5000);
   };
 
-  const handleReset = async () => {
-    const result = await reset();
-    if (result?.status === 'cancelled') return;
-    if (result?.success) {
-      setSaveToast({ type: 'success', message: result.message });
-    } else {
-      setSaveToast({ type: 'error', message: result?.error || 'No se pudo restaurar.' });
-    }
-    setTimeout(() => setSaveToast(null), 5000);
-  };
-
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -220,6 +216,65 @@ export default function Admin() {
     return (
       <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#0a0a0a', color: '#fff' }}>
         Verificando acceso seguro…
+      </div>
+    );
+  }
+
+  if (isAuthenticated && !isPasswordSetup && isContentLoading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#0a0a0a', color: '#fff' }}>
+        Verificando el contenido publicado…
+      </div>
+    );
+  }
+
+  if (isAuthenticated && !isPasswordSetup && syncStatus !== 'synced') {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'grid',
+        placeItems: 'center',
+        background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)',
+        padding: 24,
+      }}>
+        <div style={{
+          width: 'min(520px, 100%)',
+          padding: 32,
+          borderRadius: 16,
+          background: '#fff',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
+          textAlign: 'center',
+        }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 42, color: '#bf953f' }}>
+            cloud_off
+          </span>
+          <h1 style={{ margin: '12px 0 10px', fontSize: 24, color: '#151515' }}>
+            Edición protegida
+          </h1>
+          <p style={{ margin: '0 0 20px', color: '#666', lineHeight: 1.6, fontSize: 14 }}>
+            {syncError || 'No se pudo verificar la versión publicada. El editor está bloqueado para impedir una sobrescritura accidental.'}
+          </p>
+          {hasUnsaved && (
+            <p style={{
+              margin: '0 0 20px',
+              padding: 12,
+              borderRadius: 8,
+              background: '#fff8e1',
+              color: '#795500',
+              fontSize: 13,
+            }}>
+              Tus cambios pendientes quedaron guardados como borrador recuperable en este dispositivo.
+            </p>
+          )}
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={reloadContent}
+            disabled={isContentLoading}
+          >
+            {isContentLoading ? 'Verificando…' : 'Volver a verificar Supabase'}
+          </button>
+        </div>
       </div>
     );
   }
@@ -555,10 +610,6 @@ export default function Admin() {
         </div>
 
         <div className="admin-topbar__right">
-          <button className="admin-topbar__btn admin-topbar__btn--ghost" onClick={handleReset} title="Restaurar original">
-            <span className="material-symbols-outlined">restart_alt</span>
-            <span className="admin-topbar__btn-label">Reset</span>
-          </button>
           <a href="/" target="_blank" rel="noopener noreferrer" className="admin-topbar__btn admin-topbar__btn--ghost" title="Ver sitio web">
             <span className="material-symbols-outlined">open_in_new</span>
             <span className="admin-topbar__btn-label">Ver sitio</span>

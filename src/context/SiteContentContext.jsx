@@ -1,9 +1,10 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { SiteContentContext } from './useSiteContent';
 
 const CONTENT_LOAD_TIMEOUT_MS = 4000;
 const LOCAL_HISTORY_KEY = 'elky_content_history';
+const LOCAL_DRAFT_KEY = 'elky_content_draft';
 const MAX_LOCAL_VERSIONS = 10;
 
 function withTimeout(promise, timeoutMs = CONTENT_LOAD_TIMEOUT_MS) {
@@ -45,6 +46,34 @@ function saveLocalVersion(data, reason = 'Copia automática') {
     );
   } catch (error) {
     console.warn('[Backup] No se pudo crear la copia local:', error.message);
+  }
+}
+
+function readLocalDraft() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(LOCAL_DRAFT_KEY) || 'null');
+    if (!parsed?.data || typeof parsed.data !== 'object' || Array.isArray(parsed.data)) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function cachePublishedContent(data) {
+  try {
+    localStorage.setItem('luxe_content', JSON.stringify(data));
+  } catch (error) {
+    console.warn('[Backup] No se pudo actualizar la copia local:', error.message);
+  }
+}
+
+function clearLocalDraft() {
+  try {
+    localStorage.removeItem(LOCAL_DRAFT_KEY);
+  } catch (error) {
+    console.warn('[Backup] No se pudo limpiar el borrador local:', error.message);
   }
 }
 
@@ -465,78 +494,114 @@ export function SiteContentProvider({ children }) {
   const [content, setContent] = useState(defaultContent);
   const [hasUnsaved, setHasUnsaved] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [syncStatus, setSyncStatus] = useState('loading');
+  const [syncError, setSyncError] = useState('');
+  const [remoteUpdatedAt, setRemoteUpdatedAt] = useState(null);
+  const loadRequestRef = useRef(0);
 
-  // Carga inicial: Supabase SIEMPRE primero
-  useEffect(() => {
-    async function loadContent() {
-      // ─── INTENTO 1: Leer desde Supabase ─────────────────────────────────
-      let supabaseOk = false;
-      let supabaseData = null;
-      let supabaseError;
+  const loadContent = useCallback(async () => {
+    const requestId = ++loadRequestRef.current;
+    setIsLoading(true);
+    setSyncStatus('loading');
+    setSyncError('');
 
-      try {
-        const result = await withTimeout(
-          supabase
-            .from('site_content')
-            .select('data')
-            .eq('id', 'main')
-            .maybeSingle()
-        ); // maybeSingle() devuelve null (sin error) si no hay fila
-
-        supabaseOk = !result.error;
-        supabaseData = result.data;
-        supabaseError = result.error;
-      } catch (e) {
-        supabaseError = e;
-      }
-
-      // ─── CASO A: Supabase tiene datos → usarlos directamente ────────────
-      if (supabaseOk && supabaseData?.data) {
-        setContent(mergeContent(supabaseData.data));
-        setIsLoading(false);
-        return;
-      }
-
-      // ─── CASO B: Supabase OK pero vacío → intentar migrar localStorage ──
-      if (supabaseOk && !supabaseData) {
-        const localRaw = localStorage.getItem('luxe_content');
-        if (localRaw) {
-          try {
-            const localParsed = JSON.parse(localRaw);
-            const { error: upsertError } = await supabase
-              .from('site_content')
-              .upsert({ id: 'main', data: localParsed, updated_at: new Date().toISOString() });
-
-            if (!upsertError) {
-              setContent(mergeContent(localParsed));
-              // Marcar como migrado para no volver a depender de localStorage
-              localStorage.setItem('luxe_migrated_to_supabase', 'true');
-            } else {
-              console.warn('[Sync] Migration upsert error:', upsertError.message);
-              setContent(mergeContent(localParsed));
-            }
-          } catch (e) {
-            console.warn('[Sync] Migration parse error:', e.message);
-          }
-        }
-        setIsLoading(false);
-        return;
-      }
-
-      // ─── CASO C: Supabase offline o error de red → fallback localStorage ─
-      console.info('[Sync] Using local fallback:', supabaseError?.message || 'Supabase no disponible');
-      try {
-        const saved = localStorage.getItem('luxe_content');
-        if (saved) {
-          setContent(mergeContent(JSON.parse(saved)));
-        }
-      } catch (e) {
-        console.error('[Sync] localStorage fallback error:', e);
-      }
-      setIsLoading(false);
+    let result;
+    try {
+      result = await withTimeout(
+        supabase
+          .from('site_content')
+          .select('data, updated_at')
+          .eq('id', 'main')
+          .maybeSingle()
+      );
+    } catch (error) {
+      result = { data: null, error };
     }
-    loadContent();
+
+    if (requestId !== loadRequestRef.current) return;
+
+    if (!result.error && result.data?.data && result.data.updated_at) {
+      const publishedData = result.data.data;
+      let nextContent = mergeContent(publishedData);
+      let recoveredDraft = false;
+
+      saveLocalVersion(publishedData, 'Última copia sincronizada');
+      cachePublishedContent(publishedData);
+
+      if (window.location.pathname.startsWith('/admin')) {
+        const draft = readLocalDraft();
+        if (draft?.baseUpdatedAt === result.data.updated_at) {
+          nextContent = mergeContent(draft.data);
+          recoveredDraft = true;
+        } else if (draft?.data) {
+          saveLocalVersion(draft.data, 'Borrador recuperable de otra versión');
+          clearLocalDraft();
+        }
+      }
+
+      setContent(nextContent);
+      setRemoteUpdatedAt(result.data.updated_at);
+      setHasUnsaved(recoveredDraft);
+      setSyncStatus('synced');
+      setIsLoading(false);
+      return;
+    }
+
+    let localContent = null;
+    try {
+      const saved = localStorage.getItem('luxe_content');
+      if (saved) localContent = JSON.parse(saved);
+    } catch (error) {
+      console.error('[Sync] Error al leer la copia local:', error);
+    }
+
+    if (localContent) setContent(mergeContent(localContent));
+    setRemoteUpdatedAt(null);
+    setHasUnsaved(false);
+
+    if (!result.error && !result.data) {
+      setSyncStatus('missing');
+      setSyncError('Supabase no contiene el registro principal. La publicación está bloqueada para evitar reemplazar datos por accidente.');
+    } else {
+      setSyncStatus('offline');
+      setSyncError('No se pudo verificar el contenido publicado en Supabase. La publicación está bloqueada hasta recuperar la conexión.');
+      console.info('[Sync] Copia local de solo lectura:', result.error?.message || 'Supabase no disponible');
+    }
+    setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(loadContent, 0);
+    return () => {
+      clearTimeout(timeoutId);
+      loadRequestRef.current += 1;
+    };
+  }, [loadContent]);
+
+  useEffect(() => {
+    if (
+      !hasUnsaved
+      || syncStatus !== 'synced'
+      || !remoteUpdatedAt
+      || !window.location.pathname.startsWith('/admin')
+    ) {
+      return undefined;
+    }
+
+    const timeoutId = setTimeout(() => {
+      try {
+        localStorage.setItem(LOCAL_DRAFT_KEY, JSON.stringify({
+          data: content,
+          baseUpdatedAt: remoteUpdatedAt,
+          savedAt: new Date().toISOString(),
+        }));
+      } catch (error) {
+        console.warn('[Backup] No se pudo guardar el borrador local:', error.message);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [content, hasUnsaved, remoteUpdatedAt, syncStatus]);
 
   // Guardar reseña pendiente (desde el formulario público)
   const submitReview = useCallback(async (reviewData) => {
@@ -738,33 +803,6 @@ export function SiteContentProvider({ children }) {
     return { success: true };
   }, []);
 
-  const createRemoteVersion = useCallback(async (data, reason) => {
-    if (!data || typeof data !== 'object') return;
-    const { error } = await supabase
-      .from('site_content_versions')
-      .insert({ content_id: 'main', data, reason });
-    if (error) {
-      console.warn('[Backup] No se pudo crear la copia remota:', error.message);
-      return;
-    }
-
-    const { data: excessVersions, error: listError } = await supabase
-      .from('site_content_versions')
-      .select('id')
-      .eq('content_id', 'main')
-      .order('created_at', { ascending: false })
-      .range(30, 99);
-    if (!listError && excessVersions?.length) {
-      const { error: pruneError } = await supabase
-        .from('site_content_versions')
-        .delete()
-        .in('id', excessVersions.map(version => version.id));
-      if (pruneError) {
-        console.warn('[Backup] No se pudo depurar el historial antiguo:', pruneError.message);
-      }
-    }
-  }, []);
-
   const getContentVersions = useCallback(async () => {
     const localVersions = readLocalVersions().flatMap(version => {
       try {
@@ -811,102 +849,56 @@ export function SiteContentProvider({ children }) {
   }, [replaceContent]);
 
   const save = useCallback(async () => {
-    let remoteError;
-
-    // 1. Respaldar la versión publicada y guardar en Supabase.
-    try {
-      const { data: currentRow, error: readError } = await supabase
-        .from('site_content')
-        .select('data')
-        .eq('id', 'main')
-        .maybeSingle();
-      if (readError) throw readError;
-
-      if (currentRow?.data) {
-        saveLocalVersion(currentRow.data, 'Antes de guardar');
-        await createRemoteVersion(currentRow.data, 'Antes de guardar');
-      }
-
-      const { error: saveError } = await supabase
-        .from('site_content')
-        .upsert({ id: 'main', data: content, updated_at: new Date().toISOString() });
-      if (saveError) throw saveError;
-
-      try {
-        localStorage.setItem('luxe_content', JSON.stringify(content));
-      } catch (storageError) {
-        console.warn('[localStorage] No se pudo actualizar el respaldo:', storageError);
-      }
-
-      setHasUnsaved(false);
-      return {
-        success: true,
-        status: 'published',
-        message: 'Cambios publicados correctamente.',
-      };
-    } catch (error) {
-      remoteError = error;
-      console.warn('[Supabase] No se pudo publicar:', error.message);
-    }
-
-    // 2. Conservar una copia local, sin afirmar que el cambio fue publicado.
-    try {
-      localStorage.setItem('luxe_content', JSON.stringify(content));
+    if (syncStatus !== 'synced' || !remoteUpdatedAt) {
       setHasUnsaved(true);
       return {
         success: false,
-        status: 'local-only',
-        error: `No se pudo publicar en Supabase. Hay una copia temporal en este dispositivo. Reintenta cuando tengas conexión.${remoteError?.message ? ` Detalle: ${remoteError.message}` : ''}`,
+        status: 'blocked',
+        error: 'Publicación bloqueada: primero debemos verificar la versión actual de Supabase. Tu borrador permanece guardado en este dispositivo.',
       };
-    } catch (error) {
-      console.error('[localStorage] Error al guardar:', error);
+    }
+
+    saveLocalVersion(content, 'Borrador antes de publicar');
+
+    const { data: nextUpdatedAt, error } = await supabase.rpc('publish_site_content', {
+      p_data: content,
+      p_expected_updated_at: remoteUpdatedAt,
+      p_reason: 'Antes de publicar desde el panel',
+    });
+
+    if (error) {
+      const isConflict = error.message?.includes('CONTENT_CONFLICT');
       setHasUnsaved(true);
-      return {
-        success: false,
-        status: 'failed',
-        error: 'No se pudo publicar ni crear una copia local. Revisa la conexión y el espacio disponible.',
-      };
-    }
-  }, [content, createRemoteVersion]);
-
-  const reset = useCallback(async () => {
-    const confirmation = prompt(
-      'Esta acción reemplazará todo el contenido actual.\n\nEscribe RESTAURAR para continuar:'
-    );
-    if (confirmation !== 'RESTAURAR') {
-      return { success: false, status: 'cancelled' };
-    }
-
-    saveLocalVersion(content, 'Antes de restaurar valores iniciales');
-    await createRemoteVersion(content, 'Antes de restaurar valores iniciales');
-
-    try {
-      const { error } = await supabase
-        .from('site_content')
-        .upsert({ id: 'main', data: defaultContent, updated_at: new Date().toISOString() });
-      if (error) throw error;
-
-      setContent(structuredClone(defaultContent));
-      try {
-        localStorage.setItem('luxe_content', JSON.stringify(defaultContent));
-      } catch (storageError) {
-        console.warn('[localStorage] No se pudo actualizar el respaldo:', storageError.message);
+      if (isConflict) {
+        setSyncStatus('conflict');
+        setSyncError('Otra sesión publicó cambios después de que abriste el editor. Tu borrador está protegido y no se sobrescribió nada.');
+        return {
+          success: false,
+          status: 'conflict',
+          error: 'No se reemplazó el contenido: existe una versión más reciente en Supabase. Tu borrador quedó respaldado.',
+        };
       }
-      setHasUnsaved(false);
-      return {
-        success: true,
-        status: 'published',
-        message: 'Contenido inicial restaurado. La versión anterior quedó respaldada.',
-      };
-    } catch (error) {
-      console.warn('[Supabase] No se pudo restaurar:', error.message);
+
+      console.warn('[Supabase] Publicación protegida rechazada:', error.message);
       return {
         success: false,
         status: 'failed',
-        error: 'No se restauró el sitio porque Supabase no confirmó la operación.',
+        error: 'No se publicó nada porque Supabase no confirmó el respaldo y la actualización atómica. Tu borrador permanece guardado.',
       };
     }
-  }, [content, createRemoteVersion]);
+
+    setRemoteUpdatedAt(nextUpdatedAt);
+    cachePublishedContent(content);
+    clearLocalDraft();
+    setHasUnsaved(false);
+    setSyncStatus('synced');
+    setSyncError('');
+    return {
+      success: true,
+      status: 'published',
+      message: 'Cambios publicados y respaldados correctamente.',
+    };
+  }, [content, remoteUpdatedAt, syncStatus]);
 
   return (
     <SiteContentContext.Provider value={{ 
@@ -918,7 +910,9 @@ export function SiteContentProvider({ children }) {
       hasUnsaved,
       isLoading,
       loadingContent: isLoading,
-      reset,
+      syncStatus,
+      syncError,
+      reloadContent: loadContent,
       getContentVersions,
       restoreContentVersion,
       submitReview,

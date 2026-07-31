@@ -214,9 +214,9 @@ async function writeObject(request, env, url, key) {
   );
 }
 
-async function deleteObject(request, env, key) {
+async function deleteObject(request, env) {
   await requireAdmin(request, env);
-  await env.MEDIA.delete(key);
+  // Keep the object so historical content can always restore its media.
   return new Response(null, { status: 204 });
 }
 
@@ -260,7 +260,7 @@ export default {
     try {
       const response = request.method === 'PUT'
         ? await writeObject(request, env, url, key)
-        : await deleteObject(request, env, key);
+        : await deleteObject(request, env);
       return withWriteCors(response, request, env);
     } catch (error) {
       const status = error.message === 'FORBIDDEN'

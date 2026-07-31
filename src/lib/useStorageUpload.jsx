@@ -153,18 +153,6 @@ async function uploadToR2(path, file) {
   return result.url || getPublicUrl(path);
 }
 
-async function deleteFromR2(path) {
-  const { data, error: sessionError } = await supabase.auth.getSession();
-  const accessToken = data?.session?.access_token;
-  if (sessionError || !accessToken) return false;
-
-  const response = await fetch(`${MEDIA_API_URL}/media/${encodePath(path)}`, {
-    method: 'DELETE',
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  return response.ok;
-}
-
 // ─── Hook principal ───────────────────────────────────────────────────────────
 
 export function useStorageUpload() {
@@ -175,10 +163,9 @@ export function useStorageUpload() {
    * Sube un archivo a Cloudflare R2.
    * @param {File} file — Archivo a subir
    * @param {'imagenes'|'videos'|'logos'|'banners'} folder — Carpeta destino
-   * @param {string|null} oldUrl — URL anterior para eliminar (reemplazo)
    * @returns {Promise<string|null>} — URL pública o null si hubo error
    */
-  const uploadFile = useCallback(async (file, folder = 'imagenes', oldUrl = null) => {
+  const uploadFile = useCallback(async (file, folder = 'imagenes') => {
     setError(null);
 
     // Validar
@@ -196,22 +183,10 @@ export function useStorageUpload() {
         return null;
       }
 
-      // 1. Subir el archivo nuevo antes de retirar el anterior. Así, un fallo
-      // de red nunca deja una imagen existente apuntando a un archivo borrado.
+      // Cada archivo usa una ruta nueva. Los medios anteriores se conservan
+      // para que cualquier versión histórica siga siendo recuperable.
       const path = buildPath(folder, preparedFile);
       const publicUrl = await uploadToR2(path, preparedFile);
-
-      // 3. Eliminar el archivo anterior solamente después de confirmar la
-      // nueva subida. Los archivos antiguos de Supabase se conservan durante
-      // la transición; solo se retiran reemplazos que ya pertenecían a R2.
-      const oldPath = r2PathFromUrl(oldUrl);
-      if (oldPath && oldPath !== path) {
-        const removed = await deleteFromR2(oldPath);
-        if (!removed) {
-          console.warn('[Storage] No se pudo retirar el archivo reemplazado de R2.');
-        }
-      }
-
       return publicUrl;
     } catch (e) {
       setError(`Error inesperado: ${e.message}`);
@@ -222,22 +197,13 @@ export function useStorageUpload() {
   }, []);
 
   /**
-   * Elimina un archivo dado su URL pública, sea de R2 o del sistema anterior.
+   * Retira la referencia sin borrar el archivo físico. Esto permite restaurar
+   * una versión histórica que todavía utilice ese medio.
    * @param {string} url — URL pública
    * @returns {Promise<boolean>}
    */
   const deleteFile = useCallback(async (url) => {
-    const r2Path = r2PathFromUrl(url);
-    if (r2Path) return deleteFromR2(r2Path);
-
-    const legacyPath = supabasePathFromUrl(url);
-    if (!legacyPath) return false;
-    const { error: delError } = await supabase.storage.from(BUCKET).remove([legacyPath]);
-    if (delError) {
-      console.warn('[Storage] Error al eliminar:', delError.message);
-      return false;
-    }
-    return true;
+    return Boolean(pathFromUrl(url));
   }, []);
 
   return { uploadFile, deleteFile, uploading, error, setError };

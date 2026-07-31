@@ -16,6 +16,9 @@ Sitio público principal: <https://elkystudio.pages.dev>
 El proyecto usa:
 
 - `site_content` para el contenido editable del sitio.
+- `publish_site_content` para publicar de forma atómica: comprueba que nadie haya
+  guardado una versión más reciente y conserva la versión anterior antes de cambiarla.
+- `site_content_versions` para mantener hasta 50 copias recuperables en la nube.
 - `pending_reviews` para las reseñas enviadas por visitantes.
 - `contact_requests` para las solicitudes de reserva.
 - Supabase Storage `elky-studios` conserva los archivos anteriores durante la migración.
@@ -23,6 +26,13 @@ El proyecto usa:
   un Worker que valida la sesión administrativa de Supabase.
 
 [`supabase/security.sql`](./supabase/security.sql) crea las tablas, índices, bucket, permisos y políticas RLS. Es idempotente y puede volver a ejecutarse desde el SQL Editor.
+
+El editor permanece en modo protegido si no puede verificar el registro principal
+de Supabase. También conserva un borrador local recuperable mientras existan
+cambios sin publicar.
+
+Las imágenes y videos reemplazados dejan de mostrarse, pero su archivo físico
+se conserva para que las versiones anteriores puedan restaurarse completas.
 
 ## Cloudflare R2
 

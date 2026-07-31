@@ -82,8 +82,9 @@ on conflict (id) do update set
 
 grant usage on schema public to anon, authenticated;
 grant select on public.site_content to anon, authenticated;
-grant insert, update, delete on public.site_content to authenticated;
-grant select, insert, delete on public.site_content_versions to authenticated;
+revoke insert, update, delete on public.site_content from anon, authenticated;
+grant select on public.site_content_versions to authenticated;
+revoke insert, update, delete on public.site_content_versions from anon, authenticated;
 grant insert on public.pending_reviews to anon, authenticated;
 grant select, update, delete on public.pending_reviews to authenticated;
 grant insert on public.contact_requests to anon, authenticated;
@@ -104,32 +105,10 @@ to anon, authenticated
 using (true);
 
 drop policy if exists "Admins can insert site content" on public.site_content;
-create policy "Admins can insert site content"
-on public.site_content for insert
-to authenticated
-with check (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid);
-
 drop policy if exists "Admins can update site content" on public.site_content;
-create policy "Admins can update site content"
-on public.site_content for update
-to authenticated
-using (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid)
-with check (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid);
-
 drop policy if exists "Admins can delete site content" on public.site_content;
-create policy "Admins can delete site content"
-on public.site_content for delete
-to authenticated
-using (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid);
 
 drop policy if exists "Admins can create content versions" on public.site_content_versions;
-create policy "Admins can create content versions"
-on public.site_content_versions for insert
-to authenticated
-with check (
-  auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid
-  and created_by = auth.uid()
-);
 
 drop policy if exists "Admins can read content versions" on public.site_content_versions;
 create policy "Admins can read content versions"
@@ -138,10 +117,6 @@ to authenticated
 using (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid);
 
 drop policy if exists "Admins can delete content versions" on public.site_content_versions;
-create policy "Admins can delete content versions"
-on public.site_content_versions for delete
-to authenticated
-using (auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid);
 
 drop policy if exists "Public can submit reviews" on public.pending_reviews;
 create policy "Public can submit reviews"
@@ -229,5 +204,158 @@ using (
   bucket_id = 'elky-studios'
   and auth.uid() = '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid
 );
+
+-- Respaldo inicial del contenido que existe al activar esta proteccion.
+insert into public.site_content_versions (
+  content_id,
+  data,
+  reason,
+  created_by
+)
+select
+  id,
+  data,
+  'Respaldo inicial de proteccion contra perdidas',
+  null
+from public.site_content
+where id = 'main'
+  and not exists (
+    select 1
+    from public.site_content_versions
+    where content_id = 'main'
+      and reason = 'Respaldo inicial de proteccion contra perdidas'
+  );
+
+-- Toda modificacion o eliminacion conserva la version anterior dentro
+-- de la misma transaccion. Incluso una operacion administrativa externa
+-- queda respaldada antes de alterar el registro principal.
+create or replace function public.archive_site_content_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $function$
+declare
+  backup_reason text;
+begin
+  if tg_op = 'UPDATE' and old.data is not distinct from new.data then
+    return new;
+  end if;
+
+  backup_reason := nullif(
+    current_setting('app.site_content_backup_reason', true),
+    ''
+  );
+
+  insert into public.site_content_versions (
+    content_id,
+    data,
+    reason,
+    created_by
+  )
+  values (
+    old.id,
+    old.data,
+    coalesce(
+      backup_reason,
+      case
+        when tg_op = 'DELETE' then 'Copia automatica antes de eliminar'
+        else 'Copia automatica antes de publicar'
+      end
+    ),
+    auth.uid()
+  );
+
+  delete from public.site_content_versions
+  where id in (
+    select id
+    from public.site_content_versions
+    where content_id = old.id
+    order by created_at desc, id desc
+    offset 50
+  );
+
+  if tg_op = 'DELETE' then
+    return old;
+  end if;
+  return new;
+end;
+$function$;
+
+drop trigger if exists archive_site_content_before_change on public.site_content;
+create trigger archive_site_content_before_change
+before update or delete on public.site_content
+for each row
+execute function public.archive_site_content_change();
+
+-- Unica via de publicacion para el panel. Bloquea ediciones antiguas,
+-- crea el respaldo mediante el trigger y actualiza todo atomicamente.
+create or replace function public.publish_site_content(
+  p_data jsonb,
+  p_expected_updated_at timestamptz,
+  p_reason text default 'Antes de publicar desde el panel'
+)
+returns timestamptz
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $function$
+declare
+  current_data jsonb;
+  current_updated_at timestamptz;
+  next_updated_at timestamptz;
+begin
+  if auth.uid() is distinct from '69770c28-7c21-4edb-8656-9198fbd02df4'::uuid then
+    raise exception using message = 'ADMIN_REQUIRED', errcode = '42501';
+  end if;
+
+  if p_data is null
+    or jsonb_typeof(p_data) <> 'object'
+    or not (p_data ? 'brand')
+    or not (p_data ? 'services')
+    or not (p_data ? 'contact')
+    or not (p_data ? 'portfolio') then
+    raise exception using message = 'INVALID_CONTENT', errcode = '22023';
+  end if;
+
+  select data, updated_at
+  into current_data, current_updated_at
+  from public.site_content
+  where id = 'main'
+  for update;
+
+  if not found then
+    raise exception using message = 'CONTENT_MISSING', errcode = 'P0002';
+  end if;
+
+  if p_expected_updated_at is null
+    or current_updated_at is distinct from p_expected_updated_at then
+    raise exception using message = 'CONTENT_CONFLICT', errcode = '40001';
+  end if;
+
+  if current_data is not distinct from p_data then
+    return current_updated_at;
+  end if;
+
+  perform set_config(
+    'app.site_content_backup_reason',
+    coalesce(nullif(trim(p_reason), ''), 'Antes de publicar desde el panel'),
+    true
+  );
+
+  next_updated_at := clock_timestamp();
+  update public.site_content
+  set data = p_data,
+      updated_at = next_updated_at
+  where id = 'main';
+
+  return next_updated_at;
+end;
+$function$;
+
+revoke all on function public.archive_site_content_change() from public;
+revoke all on function public.publish_site_content(jsonb, timestamptz, text) from public;
+revoke all on function public.publish_site_content(jsonb, timestamptz, text) from anon;
+grant execute on function public.publish_site_content(jsonb, timestamptz, text) to authenticated;
 
 commit;

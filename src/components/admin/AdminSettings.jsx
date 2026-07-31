@@ -249,12 +249,13 @@ export default function AdminSettings({ authenticatedEmail }) {
         marginTop: 20,
         padding: 16,
         borderRadius: 10,
-        background: '#ffebee',
-        border: '1px solid #ffcdd2',
-        color: '#9b1c1c',
+        background: '#eef8f0',
+        border: '1px solid #b9dfc1',
+        color: '#215d2c',
         fontSize: 13,
       }}>
-        El botón Reset de la barra superior exige escribir <strong>RESTAURAR</strong> y crea una copia antes de reemplazar el contenido.
+        La restauración completa a la plantilla inicial fue retirada para evitar borrados accidentales.
+        Cada publicación crea primero una versión recuperable en la nube y nunca reemplaza una edición más reciente.
       </div>
     </div>
   );
