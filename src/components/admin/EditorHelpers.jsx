@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router';
 import { useStorageUpload } from '../../lib/useStorageUpload';
+import { FONT_FAMILIES, TEXT_STYLE_PRESETS, applyTextStyle } from '../../lib/textStyle';
 
 export function EditableSection({ children, sectionKey, label, onEdit, isEditing }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -187,18 +188,79 @@ export function EditableLink({ value, onChange, isEditing, className = '', style
   );
 }
 
-const FONT_SIZES = ['10px','12px','14px','16px','18px','20px','24px','28px','32px','36px','40px','48px','56px','64px','72px'];
-const COLORS = ['#0a0a0a', '#ffffff', '#bf953f', '#555555', '#888888', '#f0f0f0', '#d4a843'];
+const FONT_SIZES = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '40px', '48px', '56px', '64px', '72px', '80px', '96px'];
+const COLOR_PALETTES = [
+  {
+    name: 'Marca',
+    colors: ['#0a0a0a', '#ffffff', '#bf953f', '#d4af37', '#f5e6c8'],
+  },
+  {
+    name: 'Romántica',
+    colors: ['#6b3044', '#8c3d56', '#c9879d', '#f2d9df', '#fff4f6'],
+  },
+  {
+    name: 'Natural',
+    colors: ['#3f4b3b', '#6b4f3a', '#a67c52', '#d9c2a3', '#f2eadf'],
+  },
+  {
+    name: 'Contemporánea',
+    colors: ['#24364b', '#4f6d7a', '#4361ee', '#5a189a', '#0f766e'],
+  },
+];
+
+const ALIGNMENTS = [
+  { value: 'left', icon: 'format_align_left', label: 'Izquierda' },
+  { value: 'center', icon: 'format_align_center', label: 'Centro' },
+  { value: 'right', icon: 'format_align_right', label: 'Derecha' },
+];
+
+const EFFECTS = [
+  { value: 'none', label: 'Sin efecto' },
+  { value: 'soft', label: 'Sombra suave' },
+  { value: 'cinematic', label: 'Cinematográfico' },
+  { value: 'glow', label: 'Brillo luminoso' },
+  { value: 'gold', label: 'Resplandor dorado' },
+];
 
 export function StyleMiniToolbar({ currentStyle, onChange, label }) {
   const [isOpen, setIsOpen] = useState(false);
+  const toolbarRef = useRef(null);
+  const selectedSize = currentStyle.fontSize || '';
+  const selectedColor = /^#[0-9a-f]{6}$/i.test(currentStyle.color || '')
+    ? currentStyle.color
+    : '#ffffff';
+  const isCustomSize = selectedSize && !FONT_SIZES.includes(selectedSize);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const closeOnOutsideClick = (event) => {
+      if (!toolbarRef.current?.contains(event.target)) setIsOpen(false);
+    };
+
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+
+    document.addEventListener('pointerdown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [isOpen]);
+
+  const updateStyle = (nextValues) => onChange({ ...currentStyle, ...nextValues });
 
   return (
-    <div className="style-mini-toolbar" style={{ position: 'relative' }}>
+    <div className="style-mini-toolbar" ref={toolbarRef}>
       <button 
+        type="button"
         className={`style-mini-toolbar__trigger ${isOpen ? 'active' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
         title={`Estilos de ${label}`}
+        aria-label={`Abrir estilos de ${label}`}
+        aria-expanded={isOpen}
       >
         <span className="material-symbols-outlined">text_format</span>
       </button>
@@ -210,48 +272,230 @@ export function StyleMiniToolbar({ currentStyle, onChange, label }) {
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 10 }}
+            role="dialog"
+            aria-label={`Diseño de ${label}`}
           >
-            <div className="style-mini-toolbar__row">
-              <button 
-                className={`style-mini-btn ${currentStyle.bold ? 'active' : ''}`}
-                onClick={() => onChange({ ...currentStyle, bold: !currentStyle.bold })}
+            <div className="style-mini-toolbar__header">
+              <div>
+                <strong>Diseño de texto</strong>
+                <span>{label}</span>
+              </div>
+              <button
+                type="button"
+                className="style-mini-toolbar__close"
+                onClick={() => setIsOpen(false)}
+                aria-label="Cerrar estilos"
               >
-                <strong>B</strong>
-              </button>
-              <button 
-                className={`style-mini-btn ${currentStyle.italic ? 'active' : ''}`}
-                onClick={() => onChange({ ...currentStyle, italic: !currentStyle.italic })}
-              >
-                <em>I</em>
-              </button>
-              <button 
-                className={`style-mini-btn ${currentStyle.underline ? 'active' : ''}`}
-                onClick={() => onChange({ ...currentStyle, underline: !currentStyle.underline })}
-              >
-                <span style={{ textDecoration: 'underline' }}>U</span>
+                <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
-            <div className="style-mini-toolbar__row">
-              <select 
-                value={currentStyle.fontSize || '16px'}
-                onChange={(e) => onChange({ ...currentStyle, fontSize: e.target.value })}
-                className="style-mini-select"
-              >
-                {FONT_SIZES.map(size => <option key={size} value={size}>{size}</option>)}
-              </select>
-            </div>
+            <section className="style-mini-toolbar__section">
+              <span className="style-mini-toolbar__section-title">Estilos rápidos</span>
+              <div className="style-mini-toolbar__presets">
+                {TEXT_STYLE_PRESETS.map((preset) => (
+                  <button
+                    type="button"
+                    key={preset.id}
+                    className="style-mini-preset"
+                    style={applyTextStyle(preset.style)}
+                    onClick={() => updateStyle(preset.style)}
+                    title={`Aplicar estilo ${preset.name}`}
+                  >
+                    <span className="style-mini-preset__sample">{preset.sample}</span>
+                    <span className="style-mini-preset__name">{preset.name}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
 
-            <div className="style-mini-toolbar__colors">
-              {COLORS.map(color => (
+            <section className="style-mini-toolbar__section">
+              <label className="style-mini-toolbar__field">
+                <span className="style-mini-toolbar__section-title">Tipografía</span>
+                <select
+                  value={currentStyle.fontFamily || ''}
+                  onChange={(event) => updateStyle({ fontFamily: event.target.value || undefined })}
+                  className="style-mini-select style-mini-select--font"
+                  style={currentStyle.fontFamily ? applyTextStyle({ fontFamily: currentStyle.fontFamily }) : undefined}
+                >
+                  <option value="">Tipografía original</option>
+                  {FONT_FAMILIES.map((group) => (
+                    <optgroup key={group.group} label={group.group}>
+                      {group.options.map((font) => (
+                        <option key={font.value} value={font.value}>{font.label}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </label>
+
+              <div className="style-mini-toolbar__two-columns">
+                <label className="style-mini-toolbar__field">
+                  <span className="style-mini-toolbar__section-title">Tamaño</span>
+                  <select
+                    value={selectedSize}
+                    onChange={(event) => updateStyle({ fontSize: event.target.value || undefined })}
+                    className="style-mini-select"
+                  >
+                    <option value="">Automático</option>
+                    {isCustomSize && <option value={selectedSize}>{selectedSize}</option>}
+                    {FONT_SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
+                  </select>
+                </label>
+                <label className="style-mini-toolbar__field">
+                  <span className="style-mini-toolbar__section-title">Interlineado</span>
+                  <select
+                    value={currentStyle.lineHeight || ''}
+                    onChange={(event) => updateStyle({ lineHeight: event.target.value || undefined })}
+                    className="style-mini-select"
+                  >
+                    <option value="">Automático</option>
+                    <option value="1">Compacto</option>
+                    <option value="1.15">Corto</option>
+                    <option value="1.35">Equilibrado</option>
+                    <option value="1.55">Amplio</option>
+                    <option value="1.8">Muy amplio</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="style-mini-toolbar__row style-mini-toolbar__row--format">
                 <button
-                  key={color}
-                  className={`style-mini-color ${currentStyle.color === color ? 'active' : ''}`}
-                  style={{ background: color }}
-                  onClick={() => onChange({ ...currentStyle, color: color })}
+                  type="button"
+                  className={`style-mini-btn ${currentStyle.bold ? 'active' : ''}`}
+                  onClick={() => updateStyle({ bold: !currentStyle.bold })}
+                  title="Negrita"
+                  aria-label="Negrita"
+                >
+                  <strong>B</strong>
+                </button>
+                <button
+                  type="button"
+                  className={`style-mini-btn ${currentStyle.italic ? 'active' : ''}`}
+                  onClick={() => updateStyle({ italic: !currentStyle.italic })}
+                  title="Cursiva"
+                  aria-label="Cursiva"
+                >
+                  <em>I</em>
+                </button>
+                <button
+                  type="button"
+                  className={`style-mini-btn ${currentStyle.underline ? 'active' : ''}`}
+                  onClick={() => updateStyle({ underline: !currentStyle.underline })}
+                  title="Subrayado"
+                  aria-label="Subrayado"
+                >
+                  <span className="style-mini-underline">U</span>
+                </button>
+                <span className="style-mini-toolbar__divider" />
+                {ALIGNMENTS.map((alignment) => (
+                  <button
+                    type="button"
+                    key={alignment.value}
+                    className={`style-mini-btn ${currentStyle.textAlign === alignment.value ? 'active' : ''}`}
+                    onClick={() => updateStyle({ textAlign: alignment.value })}
+                    title={alignment.label}
+                    aria-label={`Alinear a la ${alignment.label.toLowerCase()}`}
+                  >
+                    <span className="material-symbols-outlined">{alignment.icon}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="style-mini-toolbar__two-columns">
+                <label className="style-mini-toolbar__field">
+                  <span className="style-mini-toolbar__section-title">Espaciado</span>
+                  <select
+                    value={currentStyle.letterSpacing || ''}
+                    onChange={(event) => updateStyle({ letterSpacing: event.target.value || undefined })}
+                    className="style-mini-select"
+                  >
+                    <option value="">Normal</option>
+                    <option value="-0.03em">Muy junto</option>
+                    <option value="-0.01em">Junto</option>
+                    <option value="0.03em">Ligero</option>
+                    <option value="0.08em">Elegante</option>
+                    <option value="0.14em">Amplio</option>
+                  </select>
+                </label>
+                <label className="style-mini-toolbar__field">
+                  <span className="style-mini-toolbar__section-title">Mayúsculas</span>
+                  <select
+                    value={currentStyle.textTransform || ''}
+                    onChange={(event) => updateStyle({ textTransform: event.target.value || undefined })}
+                    className="style-mini-select"
+                  >
+                    <option value="">Original</option>
+                    <option value="none">Normal</option>
+                    <option value="uppercase">MAYÚSCULAS</option>
+                    <option value="capitalize">Iniciales</option>
+                    <option value="lowercase">minúsculas</option>
+                  </select>
+                </label>
+              </div>
+            </section>
+
+            <section className="style-mini-toolbar__section">
+              <span className="style-mini-toolbar__section-title">Color personalizado</span>
+              <div className="style-mini-toolbar__color-inputs">
+                <input
+                  type="color"
+                  className="style-mini-color-picker"
+                  value={selectedColor}
+                  onChange={(event) => updateStyle({ color: event.target.value })}
+                  aria-label="Elegir color personalizado"
                 />
-              ))}
-            </div>
+                <input
+                  type="text"
+                  className="style-mini-color-code"
+                  value={currentStyle.color || ''}
+                  placeholder="#ffffff"
+                  maxLength={20}
+                  onChange={(event) => updateStyle({ color: event.target.value })}
+                  aria-label="Código del color"
+                />
+                <span className="style-mini-color-preview" style={{ background: currentStyle.color || '#ffffff' }} />
+              </div>
+
+              <div className="style-mini-toolbar__palettes">
+                {COLOR_PALETTES.map((palette) => (
+                  <div className="style-mini-toolbar__palette" key={palette.name}>
+                    <span>{palette.name}</span>
+                    <div className="style-mini-toolbar__colors">
+                      {palette.colors.map((color) => (
+                        <button
+                          type="button"
+                          key={color}
+                          className={`style-mini-color ${currentStyle.color?.toLowerCase() === color.toLowerCase() ? 'active' : ''}`}
+                          style={{ background: color }}
+                          onClick={() => updateStyle({ color })}
+                          title={`${palette.name}: ${color}`}
+                          aria-label={`Usar color ${color}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="style-mini-toolbar__section">
+              <label className="style-mini-toolbar__field">
+                <span className="style-mini-toolbar__section-title">Efecto visual</span>
+                <select
+                  value={currentStyle.effect || 'none'}
+                  onChange={(event) => updateStyle({ effect: event.target.value })}
+                  className="style-mini-select"
+                >
+                  {EFFECTS.map((effect) => (
+                    <option key={effect.value} value={effect.value}>{effect.label}</option>
+                  ))}
+                </select>
+              </label>
+              <p className="style-mini-toolbar__hint">
+                Los cambios se ven al instante. Usa “Guardar” en la barra superior para publicarlos.
+              </p>
+            </section>
           </motion.div>
         )}
       </AnimatePresence>

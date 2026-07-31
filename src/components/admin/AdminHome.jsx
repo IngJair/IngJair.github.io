@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSiteContent } from '../../context/useSiteContent';
 import { EditableSection, EditableText, EditableImage, EditableLink, StyleMiniToolbar } from './EditorHelpers';
+import { applyTextStyle } from '../../lib/textStyle';
 
 const getDestinationType = (destination = '') => {
   if (destination.startsWith('/portfolio')) return 'portfolio';
@@ -315,15 +316,13 @@ export default function AdminHome() {
                 value={hero.title}
                 onChange={(v) => update('hero.title', v)}
                 isEditing={isEditing('hero')}
-                style={{ 
-                  fontSize: hero.titleStyle?.fontSize || 'clamp(2.5rem, 6vw, 4.5rem)',
-                  fontWeight: hero.titleStyle?.bold ? 900 : 400,
-                  fontStyle: hero.titleStyle?.italic ? 'italic' : 'normal',
-                  textDecoration: hero.titleStyle?.underline ? 'underline' : 'none',
-                  color: hero.titleStyle?.color || '#fff',
+                style={applyTextStyle(hero.titleStyle, {
+                  fontSize: 'clamp(2.5rem, 6vw, 4.5rem)',
+                  fontWeight: 400,
+                  color: '#fff',
                   lineHeight: 1.1,
                   marginBottom: '24px'
-                }}
+                })}
               />
               {isEditing('hero') && (
                 <StyleMiniToolbar
@@ -340,15 +339,14 @@ export default function AdminHome() {
                 value={hero.subtitle}
                 onChange={(v) => update('hero.subtitle', v)}
                 isEditing={isEditing('hero')}
-                style={{ 
-                  fontSize: hero.subtitleStyle?.fontSize || '18px',
-                  fontWeight: hero.subtitleStyle?.bold ? 700 : 400,
-                  fontStyle: hero.subtitleStyle?.italic ? 'italic' : 'normal',
-                  color: hero.subtitleStyle?.color || 'rgba(255,255,255,0.9)',
+                style={applyTextStyle(hero.subtitleStyle, {
+                  fontSize: '18px',
+                  fontWeight: 400,
+                  color: 'rgba(255,255,255,0.9)',
                   maxWidth: '700px',
                   margin: '0 auto 40px',
                   lineHeight: 1.6
-                }}
+                })}
               />
               {isEditing('hero') && (
                 <StyleMiniToolbar
@@ -359,56 +357,74 @@ export default function AdminHome() {
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
-              <EditableLink
-                value={hero.ctaPrimaryDestination}
-                onChange={(v) => update('hero.ctaPrimaryDestination', v)}
-                isEditing={isEditing('hero')}
-              >
-                <EditableText
-                  tag="button"
-                  value={hero.ctaPrimary}
-                  onChange={(v) => update('hero.ctaPrimary', v)}
+            <div className="editable-actions-row">
+              <div className="editable-action-with-style">
+                <EditableLink
+                  value={hero.ctaPrimaryDestination}
+                  onChange={(v) => update('hero.ctaPrimaryDestination', v)}
                   isEditing={isEditing('hero')}
-                  style={{
-                    padding: '16px 32px',
-                    background: '#bf953f',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '4px',
-                    fontWeight: 700,
-                    fontSize: '13px',
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    cursor: 'pointer'
-                  }}
-                />
-              </EditableLink>
-              
-              <EditableLink
-                value={hero.ctaSecondaryDestination}
-                onChange={(v) => update('hero.ctaSecondaryDestination', v)}
-                isEditing={isEditing('hero')}
-              >
-                <EditableText
-                  tag="button"
-                  value={hero.ctaSecondary}
-                  onChange={(v) => update('hero.ctaSecondary', v)}
+                >
+                  <EditableText
+                    tag="button"
+                    value={hero.ctaPrimary}
+                    onChange={(v) => update('hero.ctaPrimary', v)}
+                    isEditing={isEditing('hero')}
+                    style={applyTextStyle(hero.ctaPrimaryStyle, {
+                      padding: '16px 32px',
+                      background: '#bf953f',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer'
+                    })}
+                  />
+                </EditableLink>
+                {isEditing('hero') && (
+                  <StyleMiniToolbar
+                    currentStyle={hero.ctaPrimaryStyle || {}}
+                    onChange={(style) => update('hero.ctaPrimaryStyle', style)}
+                    label="Botón principal"
+                  />
+                )}
+              </div>
+
+              <div className="editable-action-with-style">
+                <EditableLink
+                  value={hero.ctaSecondaryDestination}
+                  onChange={(v) => update('hero.ctaSecondaryDestination', v)}
                   isEditing={isEditing('hero')}
-                  style={{
-                    padding: '16px 32px',
-                    background: 'transparent',
-                    color: '#fff',
-                    border: '2px solid #fff',
-                    borderRadius: '4px',
-                    fontWeight: 700,
-                    fontSize: '13px',
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    cursor: 'pointer'
-                  }}
-                />
-              </EditableLink>
+                >
+                  <EditableText
+                    tag="button"
+                    value={hero.ctaSecondary}
+                    onChange={(v) => update('hero.ctaSecondary', v)}
+                    isEditing={isEditing('hero')}
+                    style={applyTextStyle(hero.ctaSecondaryStyle, {
+                      padding: '16px 32px',
+                      background: 'transparent',
+                      color: '#fff',
+                      border: '2px solid #fff',
+                      borderRadius: '4px',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer'
+                    })}
+                  />
+                </EditableLink>
+                {isEditing('hero') && (
+                  <StyleMiniToolbar
+                    currentStyle={hero.ctaSecondaryStyle || {}}
+                    onChange={(style) => update('hero.ctaSecondaryStyle', style)}
+                    label="Botón secundario"
+                  />
+                )}
+              </div>
             </div>
           </div>
         </section>
@@ -504,59 +520,95 @@ export default function AdminHome() {
             />
             
             <div>
-              <EditableText
-                tag="span"
-                value={intro.tag}
-                onChange={(v) => update('intro.tag', v)}
-                isEditing={isEditing('intro')}
-                style={{ 
-                  fontSize: intro.tagStyle?.fontSize || '11px',
-                  fontWeight: 800,
-                  letterSpacing: '0.2em',
-                  textTransform: 'uppercase',
-                  color: '#bf953f',
-                  marginBottom: '16px',
-                  display: 'block'
-                }}
-              />
-              <EditableText
-                tag="h2"
-                value={intro.title}
-                onChange={(v) => update('intro.title', v)}
-                isEditing={isEditing('intro')}
-                style={{ 
-                  fontSize: '48px',
-                  fontFamily: 'Playfair Display, serif',
-                  marginBottom: '24px',
-                  color: '#0a0a0a'
-                }}
-              />
-              <EditableText
-                tag="p"
-                value={intro.body}
-                onChange={(v) => update('intro.body', v)}
-                isEditing={isEditing('intro')}
-                style={{ 
-                  fontSize: '16px',
-                  lineHeight: 1.8,
-                  color: '#555',
-                  marginBottom: '32px'
-                }}
-              />
-              <EditableText
-                tag="a"
-                value={intro.ctaText}
-                onChange={(v) => update('intro.ctaText', v)}
-                isEditing={isEditing('intro')}
-                style={{ 
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  color: '#0a0a0a',
-                  textDecoration: 'none',
-                  borderBottom: '2px solid #bf953f',
-                  paddingBottom: '4px'
-                }}
-              />
+              <div className="editable-text-with-toolbar">
+                <EditableText
+                  tag="span"
+                  value={intro.tag}
+                  onChange={(v) => update('intro.tag', v)}
+                  isEditing={isEditing('intro')}
+                  style={applyTextStyle(intro.tagStyle, {
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase',
+                    color: '#bf953f',
+                    marginBottom: '16px',
+                    display: 'block'
+                  })}
+                />
+                {isEditing('intro') && (
+                  <StyleMiniToolbar
+                    currentStyle={intro.tagStyle || {}}
+                    onChange={(style) => update('intro.tagStyle', style)}
+                    label="Etiqueta de introducción"
+                  />
+                )}
+              </div>
+              <div className="editable-text-with-toolbar">
+                <EditableText
+                  tag="h2"
+                  value={intro.title}
+                  onChange={(v) => update('intro.title', v)}
+                  isEditing={isEditing('intro')}
+                  style={applyTextStyle(intro.titleStyle, {
+                    fontSize: '48px',
+                    fontFamily: 'Playfair Display, serif',
+                    marginBottom: '24px',
+                    color: '#0a0a0a'
+                  })}
+                />
+                {isEditing('intro') && (
+                  <StyleMiniToolbar
+                    currentStyle={intro.titleStyle || {}}
+                    onChange={(style) => update('intro.titleStyle', style)}
+                    label="Título de introducción"
+                  />
+                )}
+              </div>
+              <div className="editable-text-with-toolbar">
+                <EditableText
+                  tag="p"
+                  value={intro.body}
+                  onChange={(v) => update('intro.body', v)}
+                  isEditing={isEditing('intro')}
+                  style={applyTextStyle(intro.bodyStyle, {
+                    fontSize: '16px',
+                    lineHeight: 1.8,
+                    color: '#555',
+                    marginBottom: '32px'
+                  })}
+                />
+                {isEditing('intro') && (
+                  <StyleMiniToolbar
+                    currentStyle={intro.bodyStyle || {}}
+                    onChange={(style) => update('intro.bodyStyle', style)}
+                    label="Texto de introducción"
+                  />
+                )}
+              </div>
+              <div className="editable-text-with-toolbar editable-text-with-toolbar--compact">
+                <EditableText
+                  tag="a"
+                  value={intro.ctaText}
+                  onChange={(v) => update('intro.ctaText', v)}
+                  isEditing={isEditing('intro')}
+                  style={applyTextStyle(intro.ctaTextStyle, {
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    color: '#0a0a0a',
+                    textDecoration: 'none',
+                    borderBottom: '2px solid #bf953f',
+                    paddingBottom: '4px'
+                  })}
+                />
+                {isEditing('intro') && (
+                  <StyleMiniToolbar
+                    currentStyle={intro.ctaTextStyle || {}}
+                    onChange={(style) => update('intro.ctaTextStyle', style)}
+                    label="Enlace de introducción"
+                  />
+                )}
+              </div>
             </div>
           </div>
         </section>
@@ -571,19 +623,28 @@ export default function AdminHome() {
       >
         <section className="services-preview section-padding" style={{ padding: '100px 0', background: '#f9f9f9' }}>
           <div className="container">
-            <EditableText
-              tag="h2"
-              value={services.title}
-              onChange={(v) => update('services.title', v)}
-              isEditing={isEditing('services')}
-              style={{ 
-                fontSize: '48px',
-                fontFamily: 'Playfair Display, serif',
-                textAlign: 'center',
-                marginBottom: '60px',
-                color: '#0a0a0a'
-              }}
-            />
+            <div className="editable-text-with-toolbar editable-text-with-toolbar--centered">
+              <EditableText
+                tag="h2"
+                value={services.title}
+                onChange={(v) => update('services.title', v)}
+                isEditing={isEditing('services')}
+                style={applyTextStyle(services.titleStyle, {
+                  fontSize: '48px',
+                  fontFamily: 'Playfair Display, serif',
+                  textAlign: 'center',
+                  marginBottom: '60px',
+                  color: '#0a0a0a'
+                })}
+              />
+              {isEditing('services') && (
+                <StyleMiniToolbar
+                  currentStyle={services.titleStyle || {}}
+                  onChange={(style) => update('services.titleStyle', style)}
+                  label="Título de servicios"
+                />
+              )}
+            </div>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '30px' }}>
               {services.items.map((item, i) => (
@@ -609,30 +670,48 @@ export default function AdminHome() {
       >
         <section className="cta section-padding" style={{ padding: '100px 0', background: '#0a0a0a', color: '#fff', textAlign: 'center' }}>
           <div className="container">
-            <EditableText
-              tag="h2"
-              value={cta.title}
-              onChange={(v) => update('cta.title', v)}
-              isEditing={isEditing('cta')}
-              style={{ 
-                fontSize: '48px',
-                fontFamily: 'Playfair Display, serif',
-                marginBottom: '20px',
-                color: '#fff'
-              }}
-            />
-            <EditableText
-              tag="p"
-              value={cta.subtitle}
-              onChange={(v) => update('cta.subtitle', v)}
-              isEditing={isEditing('cta')}
-              style={{ 
-                fontSize: '18px',
-                color: 'rgba(255,255,255,0.7)',
-                maxWidth: '600px',
-                margin: '0 auto'
-              }}
-            />
+            <div className="editable-text-with-toolbar editable-text-with-toolbar--centered">
+              <EditableText
+                tag="h2"
+                value={cta.title}
+                onChange={(v) => update('cta.title', v)}
+                isEditing={isEditing('cta')}
+                style={applyTextStyle(cta.titleStyle, {
+                  fontSize: '48px',
+                  fontFamily: 'Playfair Display, serif',
+                  marginBottom: '20px',
+                  color: '#fff'
+                })}
+              />
+              {isEditing('cta') && (
+                <StyleMiniToolbar
+                  currentStyle={cta.titleStyle || {}}
+                  onChange={(style) => update('cta.titleStyle', style)}
+                  label="Título final"
+                />
+              )}
+            </div>
+            <div className="editable-text-with-toolbar editable-text-with-toolbar--centered">
+              <EditableText
+                tag="p"
+                value={cta.subtitle}
+                onChange={(v) => update('cta.subtitle', v)}
+                isEditing={isEditing('cta')}
+                style={applyTextStyle(cta.subtitleStyle, {
+                  fontSize: '18px',
+                  color: 'rgba(255,255,255,0.7)',
+                  maxWidth: '600px',
+                  margin: '0 auto'
+                })}
+              />
+              {isEditing('cta') && (
+                <StyleMiniToolbar
+                  currentStyle={cta.subtitleStyle || {}}
+                  onChange={(style) => update('cta.subtitleStyle', style)}
+                  label="Subtítulo final"
+                />
+              )}
+            </div>
           </div>
         </section>
       </EditableSection>

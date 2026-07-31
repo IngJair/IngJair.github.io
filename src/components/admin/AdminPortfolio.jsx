@@ -3,6 +3,7 @@ import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useSiteContent } from '../../context/useSiteContent';
 import { EditableSection, EditableText, StyleMiniToolbar } from './EditorHelpers';
 import { pathFromUrl, useStorageUpload } from '../../lib/useStorageUpload';
+import { applyTextStyle } from '../../lib/textStyle';
 
 export default function AdminPortfolio() {
   const { content, update } = useSiteContent();
@@ -27,14 +28,13 @@ export default function AdminPortfolio() {
               value={portfolio.hero?.title || 'Nuestro Portafolio'}
               onChange={v => update('portfolio.hero.title', v)}
               isEditing={isEditing('port-hero')}
-              style={{
-                fontSize: portfolio.hero?.titleStyle?.fontSize || 'clamp(2.5rem, 6vw, 4rem)',
+              style={applyTextStyle(portfolio.hero?.titleStyle, {
+                fontSize: 'clamp(2.5rem, 6vw, 4rem)',
                 fontFamily: 'Playfair Display, serif',
-                fontWeight: portfolio.hero?.titleStyle?.bold ? 900 : 400,
-                fontStyle: portfolio.hero?.titleStyle?.italic ? 'italic' : 'normal',
-                color: portfolio.hero?.titleStyle?.color || '#0a0a0a',
+                fontWeight: 400,
+                color: '#0a0a0a',
                 marginBottom: 24,
-              }}
+              })}
             />
             {isEditing('port-hero') && (
               <StyleMiniToolbar
@@ -50,14 +50,13 @@ export default function AdminPortfolio() {
               value={portfolio.hero?.subtitle || 'Momentos capturados con maestría técnica y sensibilidad artística.'}
               onChange={v => update('portfolio.hero.subtitle', v)}
               isEditing={isEditing('port-hero')}
-              style={{ 
-                fontSize: portfolio.hero?.subtitleStyle?.fontSize || '16px', 
-                fontWeight: portfolio.hero?.subtitleStyle?.bold ? 700 : 400,
-                fontStyle: portfolio.hero?.subtitleStyle?.italic ? 'italic' : 'normal',
-                color: portfolio.hero?.subtitleStyle?.color || '#666', 
+              style={applyTextStyle(portfolio.hero?.subtitleStyle, {
+                fontSize: '16px',
+                fontWeight: 400,
+                color: '#666',
                 maxWidth: 600, 
                 lineHeight: 1.7 
-              }}
+              })}
             />
             {isEditing('port-hero') && (
               <StyleMiniToolbar

@@ -6,16 +6,10 @@ import ScrollReveal from '../components/ScrollReveal';
 import { portfolioItems as staticEvents, CATEGORIES as staticCategories, YEARS as staticYears } from '../data/portfolioData';
 import { useSiteContent } from '../context/useSiteContent';
 import { PortfolioPromoPopup } from '../components/PromoPopup';
+import { applyTextStyle } from '../lib/textStyle';
 import './Portfolio.css';
 
-const applyStyle = (styleObj, baseStyle = {}) => ({
-  ...baseStyle,
-  fontSize: styleObj?.fontSize || baseStyle.fontSize,
-  fontWeight: styleObj?.bold ? 900 : (baseStyle.fontWeight || 400),
-  fontStyle: styleObj?.italic ? 'italic' : 'normal',
-  textDecoration: styleObj?.underline ? 'underline' : (baseStyle.textDecoration || 'none'),
-  color: styleObj?.color || baseStyle.color,
-});
+const applyStyle = applyTextStyle;
 
 export default function Portfolio() {
   const { content } = useSiteContent();

@@ -4,16 +4,10 @@ import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import PageTransition from '../components/PageTransition';
 import { useSiteContent } from '../context/useSiteContent';
 import { HomePromoPopup } from '../components/PromoPopup';
+import { applyTextStyle } from '../lib/textStyle';
 import './Home.css';
 
-const applyStyle = (styleObj, baseStyle = {}) => ({
-  ...baseStyle,
-  fontSize: styleObj?.fontSize || baseStyle.fontSize,
-  fontWeight: styleObj?.bold ? 900 : (baseStyle.fontWeight || 400),
-  fontStyle: styleObj?.italic ? 'italic' : 'normal',
-  textDecoration: styleObj?.underline ? 'underline' : (baseStyle.textDecoration || 'none'),
-  color: styleObj?.color || baseStyle.color,
-});
+const applyStyle = applyTextStyle;
 
 const HERO_FALLBACK_IMAGE = '/imagenes/4457575698e39f2bc156fc256b379a32.jpg';
 const INTRO_FALLBACK_IMAGE = '/imagenes/fotografia-retrato-estilos.jpg';
